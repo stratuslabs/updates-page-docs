@@ -1,0 +1,120 @@
+---
+title: Custom Domain
+description: 'Use your own domain for your changelog'
+---
+
+# Custom Domain Setup
+
+Use your own domain (like `changelog.yourcompany.com`) for a seamless brand experience.
+
+<Note>
+  Custom domains are available on the **Pro** and **Business** plans.
+</Note>
+
+## Setting up your custom domain
+
+<Steps>
+  <Step title="Choose your subdomain">
+    We recommend `changelog.yourcompany.com` or `updates.yourcompany.com`.
+    
+    <Tip>
+      Using a subdomain (not your root domain) is recommended for easier setup and no conflicts with your main site.
+    </Tip>
+  </Step>
+  <Step title="Add the domain in updates.page">
+    Go to **Settings → Portal → Domain Name** and enter your full domain (e.g., `changelog.yourcompany.com`).
+  </Step>
+  <Step title="Configure DNS">
+    Add a CNAME record pointing to `cname.updates.page`:
+    
+    | Type | Name | Value |
+    |------|------|-------|
+    | CNAME | changelog | cname.updates.page |
+    
+    <Info>
+      DNS changes can take up to 48 hours to propagate, but usually complete within a few minutes.
+    </Info>
+  </Step>
+  <Step title="Verify and enable SSL">
+    Click **Verify** in your updates.page settings. Once verified, SSL will be automatically provisioned.
+  </Step>
+</Steps>
+
+[TODO: ADD IMAGE - CUSTOM DOMAIN SETTINGS PAGE]
+
+## DNS configuration by provider
+
+<AccordionGroup>
+  <Accordion title="Cloudflare">
+    1. Go to your domain's DNS settings
+    2. Add a CNAME record:
+       - **Name:** `changelog` (or your chosen subdomain)
+       - **Target:** `cname.updates.page`
+       - **Proxy status:** DNS only (gray cloud)
+    
+    <Warning>
+      Make sure the orange cloud (proxy) is OFF for the CNAME record.
+    </Warning>
+  </Accordion>
+  <Accordion title="GoDaddy">
+    1. Go to **My Products → DNS**
+    2. Click **Add** under Records
+    3. Select **CNAME**
+    4. Enter:
+       - **Host:** `changelog`
+       - **Points to:** `cname.updates.page`
+       - **TTL:** 1 Hour
+  </Accordion>
+  <Accordion title="Namecheap">
+    1. Go to **Domain List → Manage → Advanced DNS**
+    2. Click **Add New Record**
+    3. Select **CNAME Record**
+    4. Enter:
+       - **Host:** `changelog`
+       - **Value:** `cname.updates.page`
+       - **TTL:** Automatic
+  </Accordion>
+  <Accordion title="Route 53 (AWS)">
+    1. Go to your hosted zone
+    2. Click **Create record**
+    3. Enter:
+       - **Record name:** `changelog`
+       - **Record type:** CNAME
+       - **Value:** `cname.updates.page`
+       - **TTL:** 300
+  </Accordion>
+  <Accordion title="Vercel">
+    1. Go to your project's **Domains** settings
+    2. This is for your main site — for the changelog subdomain, configure in your domain registrar's DNS settings
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Domain won't verify">
+    - Double-check the CNAME record is pointing to `cname.updates.page`
+    - Wait a few minutes for DNS propagation
+    - Use [dnschecker.org](https://dnschecker.org) to verify your DNS is propagated
+  </Accordion>
+  <Accordion title="SSL certificate not working">
+    - SSL provisioning can take up to 24 hours
+    - Ensure there's no conflicting A record for the same subdomain
+    - If using Cloudflare, make sure proxy is disabled (gray cloud)
+  </Accordion>
+  <Accordion title="Getting a redirect loop">
+    - If using Cloudflare, set SSL mode to "Full" or "Full (strict)"
+    - Disable any page rules that might interfere
+  </Accordion>
+</AccordionGroup>
+
+## Using a root domain
+
+We recommend using a subdomain, but if you must use a root domain (`yourcompany.com`):
+
+1. Your DNS provider must support CNAME flattening (Cloudflare, Route 53)
+2. Create an ALIAS or CNAME record for `@` pointing to `cname.updates.page`
+
+<Warning>
+  Using a root domain may conflict with your main website. Proceed with caution.
+</Warning>

@@ -1,0 +1,152 @@
+---
+title: Styling Embeds
+description: 'Customize the look and feel of your embeds'
+---
+
+# Styling Embeds
+
+Make your embeds match your brand with custom colors and CSS.
+
+## Theme options
+
+Both widget and inline embeds support light and dark themes:
+
+| Theme | Best for |
+|-------|----------|
+| **Light** | Light-background apps and sites |
+| **Dark** | Dark mode apps, dark-themed sites |
+
+Set the theme in your embed settings or via data attribute:
+
+```html
+<script 
+  src="https://cdn.updates.page/widget.js" 
+  data-embed-id="your-embed-id"
+  data-theme="dark"
+  async
+></script>
+```
+
+[TODO: ADD IMAGE - LIGHT VS DARK THEME COMPARISON]
+
+## Widget styling
+
+### Position
+
+The widget button can be positioned in the bottom-left or bottom-right corner:
+
+```html
+<script 
+  src="https://cdn.updates.page/widget.js" 
+  data-embed-id="your-embed-id"
+  data-position="bottom-left"
+  async
+></script>
+```
+
+### Custom CSS
+
+Target widget elements with these CSS selectors:
+
+```css
+/* Widget button */
+.updates-page-widget-button {
+  background: #your-brand-color !important;
+}
+
+/* Widget panel */
+.updates-page-widget-panel {
+  font-family: 'Your Font', sans-serif;
+}
+
+/* Panel header */
+.updates-page-widget-header {
+  background: #your-brand-color;
+}
+```
+
+<Warning>
+  Widget styles are injected in a shadow DOM. You may need `!important` to override default styles.
+</Warning>
+
+## Inline styling
+
+The inline embed is fully customizable with regular CSS. See [Inline Embed](/embeds/inline) for all available CSS classes.
+
+### Responsive design
+
+The inline embed is responsive by default. Customize breakpoints with media queries:
+
+```css
+.updates-page-inline {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 768px) {
+  .updates-page-inline {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+## Color customization
+
+Match your brand colors:
+
+```css
+/* Category badges */
+.updates-page-category[data-category="new"] {
+  background: #10B981;
+  color: white;
+}
+
+.updates-page-category[data-category="improvement"] {
+  background: #3B82F6;
+  color: white;
+}
+
+.updates-page-category[data-category="fix"] {
+  background: #F59E0B;
+  color: white;
+}
+
+/* Links */
+.updates-page-title a {
+  color: #your-brand-color;
+}
+
+.updates-page-title a:hover {
+  text-decoration: underline;
+}
+```
+
+## Typography
+
+Match your site's typography:
+
+```css
+.updates-page-inline {
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.updates-page-title {
+  font-family: 'Your Heading Font', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+```
+
+## Z-index
+
+If the widget appears behind other elements, adjust the z-index:
+
+```css
+.updates-page-widget-button,
+.updates-page-widget-panel {
+  z-index: 99999 !important;
+}
+```

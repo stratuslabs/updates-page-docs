@@ -1,0 +1,77 @@
+---
+title: Roles & Permissions
+description: 'Understand team member roles and what they can do'
+---
+
+# Roles & Permissions
+
+Control what team members can do with role-based permissions.
+
+## Available roles
+
+| Role | Description |
+|------|-------------|
+| **Owner** | Full access to everything, including billing |
+| **Admin** | Full access except billing and ownership transfer |
+| **Member** | Can create and manage announcements |
+
+## Permission matrix
+
+| Permission | Owner | Admin | Member |
+|------------|-------|-------|--------|
+| Create announcements | ✓ | ✓ | ✓ |
+| Edit own announcements | ✓ | ✓ | ✓ |
+| Edit all announcements | ✓ | ✓ | ✗ |
+| Delete announcements | ✓ | ✓ | ✗ |
+| Publish announcements | ✓ | ✓ | ✓ |
+| Manage categories | ✓ | ✓ | ✗ |
+| Portal settings | ✓ | ✓ | ✗ |
+| Invite members | ✓ | ✓ | ✗ |
+| Remove members | ✓ | ✓ | ✗ |
+| Change member roles | ✓ | ✓ | ✗ |
+| Billing & subscription | ✓ | ✗ | ✗ |
+| Transfer ownership | ✓ | ✗ | ✗ |
+| Delete account | ✓ | ✗ | ✗ |
+
+## Changing roles
+
+Only Owners and Admins can change roles:
+
+1. Go to **Settings → Team → Members**
+2. Click the **...** menu next to a member
+3. Select **Change role**
+4. Choose the new role
+
+<Warning>
+  You cannot change your own role. Another Owner or Admin must do it.
+</Warning>
+
+## Transferring ownership
+
+To transfer account ownership:
+
+1. Go to **Settings → Team → General**
+2. Click **Transfer ownership**
+3. Select the new owner (must be an existing team member)
+4. Confirm the transfer
+
+<Warning>
+  Ownership transfer is permanent. You'll become an Admin after transferring.
+</Warning>
+
+## Best practices
+
+<CardGroup cols={2}>
+  <Card title="Limit Owners" icon="shield">
+    Only give Owner access to people who need billing access
+  </Card>
+  <Card title="Use Admin for managers" icon="user-shield">
+    Team leads who need full content control but not billing
+  </Card>
+  <Card title="Member for contributors" icon="user">
+    Writers who create content but don't manage settings
+  </Card>
+  <Card title="Review regularly" icon="clock">
+    Remove access for people who leave the team
+  </Card>
+</CardGroup>

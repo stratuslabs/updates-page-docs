@@ -1,0 +1,92 @@
+---
+title: SEO Settings
+description: 'Optimize your changelog for search engines'
+---
+
+# SEO Settings
+
+Make your changelog discoverable in search engines and look great when shared on social media.
+
+## Meta tags
+
+Configure your portal's meta tags in **Settings → Portal → Analytics & SEO**:
+
+| Setting | Description | Recommendation |
+|---------|-------------|----------------|
+| **Meta title** | Page title in search results | "[Company] Changelog" or "What's New at [Company]" |
+| **Meta description** | Description in search results | 150-160 characters describing your changelog |
+
+[TODO: ADD IMAGE - SEO SETTINGS PANEL]
+
+## How it works
+
+updates.page automatically generates:
+
+### For your portal index
+- `<title>` — Your meta title
+- `<meta name="description">` — Your meta description
+- `<link rel="canonical">` — Canonical URL
+- Open Graph tags for social sharing
+- Twitter Card tags
+- JSON-LD structured data (WebSite schema)
+
+### For individual announcements
+- `<title>` — "[Announcement Title] - [Meta Title]"
+- `<meta name="description">` — Announcement summary
+- `<link rel="canonical">` — Announcement URL
+- Open Graph tags with announcement details
+- Twitter Cards (large image if cover image exists)
+- JSON-LD structured data (Article schema)
+
+## Social sharing preview
+
+When your changelog or announcements are shared on social media, they'll display:
+
+- **Title** — Page or announcement title
+- **Description** — Meta description or announcement summary
+- **Image** — Cover image (if set) or your logo
+
+[TODO: ADD IMAGE - SOCIAL SHARE PREVIEW EXAMPLE (TWITTER/LINKEDIN)]
+
+<Tip>
+  Use [opengraph.xyz](https://opengraph.xyz) to preview how your pages will look when shared.
+</Tip>
+
+## Search engine indexing
+
+By default, your portal is indexable by search engines. To prevent indexing:
+
+1. Go to **Settings → Portal → Analytics & SEO**
+2. Enable **"No Index"**
+3. This adds `<meta name="robots" content="noindex, nofollow">` to your portal
+
+<Note>
+  Use "No Index" if your changelog is internal-only or you don't want it appearing in search results.
+</Note>
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Write descriptive titles">
+    Include your company name and keywords like "changelog," "updates," or "what's new."
+  </Accordion>
+  <Accordion title="Use announcement summaries">
+    The first ~160 characters of your announcement become the meta description. Make them count.
+  </Accordion>
+  <Accordion title="Add cover images">
+    Announcements with cover images get better engagement when shared on social media.
+  </Accordion>
+  <Accordion title="Use a custom domain">
+    `changelog.yourcompany.com` looks more professional and may rank better than a subdomain.
+  </Accordion>
+</AccordionGroup>
+
+## RSS feed for SEO
+
+Your RSS feed (`/changelog/rss`) helps search engines discover new content and enables users to subscribe.
+
+Add a link to your RSS feed from your main website:
+
+```html
+<link rel="alternate" type="application/rss+xml" title="Changelog" href="https://changelog.yourcompany.com/changelog/rss" />
+```
