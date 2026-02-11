@@ -10,11 +10,7 @@
   "colors": {
     "primary": "#000000",
     "light": "#3B82F6",
-    "dark": "#000000",
-    "anchors": {
-      "from": "#000000",
-      "to": "#3B82F6"
-    }
+    "dark": "#000000"
   },
   "topbarLinks": [
     {
@@ -26,80 +22,60 @@
     "name": "Get Started",
     "url": "https://app.updates.page/signup"
   },
-  "tabs": [
-    {
-      "name": "Documentation",
-      "url": "/"
-    },
-    {
-      "name": "API Reference",
-      "url": "/api"
-    }
-  ],
-  "anchors": [
-    {
-      "name": "Community",
-      "icon": "discord",
-      "url": "https://discord.gg/updatespage"
-    },
-    {
-      "name": "Blog",
-      "icon": "newspaper",
-      "url": "https://updates.page/blog"
-    }
-  ],
-  "navigation": [
-    {
-      "group": "Getting Started",
-      "pages": [
-        "introduction",
-        "quickstart",
-        "first-announcement"
-      ]
-    },
-    {
-      "group": "Announcements",
-      "pages": [
-        "announcements/writing",
-        "announcements/categories",
-        "announcements/scheduling",
-        "announcements/cover-images"
-      ]
-    },
-    {
-      "group": "Portal",
-      "pages": [
-        "portal/overview",
-        "portal/custom-domain",
-        "portal/customization",
-        "portal/seo",
-        "portal/analytics"
-      ]
-    },
-    {
-      "group": "Embeds",
-      "pages": [
-        "embeds/overview",
-        "embeds/widget",
-        "embeds/inline",
-        "embeds/styling"
-      ]
-    },
-    {
-      "group": "Team",
-      "pages": [
-        "team/members",
-        "team/roles"
-      ]
-    },
-    {
-      "group": "Billing",
-      "pages": [
-        "billing/plans",
-        "billing/faq"
-      ]
-    }
-  ],
+  "navigation": {
+    "groups": [
+      {
+        "group": "Getting Started",
+        "pages": [
+          "introduction",
+          "quickstart",
+          "first-announcement"
+        ]
+      },
+      {
+        "group": "Announcements",
+        "pages": [
+          "announcements/writing",
+          "announcements/categories",
+          "announcements/scheduling",
+          "announcements/cover-images"
+        ]
+      },
+      {
+        "group": "Portal",
+        "pages": [
+          "portal/overview",
+          "portal/custom-domain",
+          "portal/customization",
+          "portal/seo",
+          "portal/analytics"
+        ]
+      },
+      {
+        "group": "Embeds",
+        "pages": [
+          "embeds/overview",
+          "embeds/widget",
+          "embeds/inline",
+          "embeds/styling"
+        ]
+      },
+      {
+        "group": "Team",
+        "pages": [
+          "team/members",
+          "team/roles"
+        ]
+      },
+      {
+        "group": "Billing",
+        "pages": [
+          "billing/plans",
+          "billing/faq"
+        ]
+      }
+    ]
+  },
   "footerSocials": {
     "twitter": "https://twitter.com/updatespage",
     "github": "https://github.com/updatespage"
