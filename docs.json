@@ -61,6 +61,20 @@
         ]
       },
       {
+        "group": "API Reference",
+        "pages": [
+          "api/authentication",
+          "api/announcements",
+          "api/categories"
+        ]
+      },
+      {
+        "group": "CLI",
+        "pages": [
+          "cli/overview"
+        ]
+      },
+      {
         "group": "Team",
         "pages": [
           "team/members",
@@ -78,6 +92,6 @@
   },
   "footerSocials": {
     "twitter": "https://twitter.com/updatespage",
-    "github": "https://github.com/updatespage"
+    "github": "https://github.com/stellarco"
   }
 }

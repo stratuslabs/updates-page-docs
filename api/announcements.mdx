@@ -1,0 +1,147 @@
+---
+title: Announcements API
+description: 'Create, publish, and manage announcements via the API'
+---
+
+# Announcements API
+
+Manage announcements programmatically. All endpoints require [authentication](/api/authentication) and return JSON.
+
+Base URL: `https://app.updates.page`
+
+## List announcements
+
+```
+GET /api/v1/announcements
+```
+
+Optionally filter by status with `?status=draft`, `?status=published`, or `?status=scheduled`.
+
+```bash
+curl "https://app.updates.page/api/v1/announcements?status=published" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Returns an array of announcements:
+
+```json
+[
+  {
+    "id": 42,
+    "title": "New: Dark mode is here",
+    "created_at": "2026-07-01T09:15:00Z",
+    "updated_at": "2026-07-02T14:30:00Z",
+    "published_at": "2026-07-02T14:30:00Z",
+    "category_id": 3,
+    "is_public": true,
+    "status": "published",
+    "portal_url": "https://yourcompany.updates.page/changelog/new-dark-mode-is-here"
+  }
+]
+```
+
+## Get an announcement
+
+```
+GET /api/v1/announcements/:id
+```
+
+Returns the full announcement, including its content, summary, category, and cover image.
+
+```bash
+curl https://app.updates.page/api/v1/announcements/42 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```json
+{
+  "id": 42,
+  "title": "New: Dark mode is here",
+  "content": "<p>You can now switch to dark mode from your profile menu.</p>",
+  "summary": "You can now switch to dark mode from your profile menu.",
+  "category": {
+    "name": "New",
+    "color": "#10B981"
+  },
+  "cover_image": "https://...",
+  "created_at": "2026-07-01T09:15:00Z",
+  "updated_at": "2026-07-02T14:30:00Z",
+  "published_at": "2026-07-02T14:30:00Z",
+  "is_public": true,
+  "status": "published",
+  "portal_url": "https://yourcompany.updates.page/changelog/new-dark-mode-is-here"
+}
+```
+
+## Create an announcement
+
+```
+POST /api/v1/announcements
+```
+
+Creates a draft announcement. `content` is HTML. `category_id` is optional — see the [Categories API](/api/categories) to list your category IDs.
+
+```bash
+curl -X POST https://app.updates.page/api/v1/announcements \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "announcement": {
+      "title": "New: Dark mode is here",
+      "content": "<p>You can now switch to dark mode from your profile menu.</p>",
+      "category_id": 123
+    }
+  }'
+```
+
+Returns the created announcement.
+
+## Publish an announcement
+
+```
+POST /api/v1/announcements/:id/publish
+```
+
+Publishes an announcement immediately:
+
+```bash
+curl -X POST https://app.updates.page/api/v1/announcements/42/publish \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+To schedule it instead, pass an ISO 8601 `published_at` in the body:
+
+```bash
+curl -X POST https://app.updates.page/api/v1/announcements/42/publish \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"published_at": "2026-08-01T09:00:00Z"}'
+```
+
+## Unpublish an announcement
+
+```
+POST /api/v1/announcements/:id/unpublish
+```
+
+Reverts a published announcement to a draft:
+
+```bash
+curl -X POST https://app.updates.page/api/v1/announcements/42/unpublish \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Delete an announcement
+
+```
+DELETE /api/v1/announcements/:id
+```
+
+```bash
+curl -X DELETE https://app.updates.page/api/v1/announcements/42 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+<Warning>
+  Deleting an announcement is permanent.
+</Warning>

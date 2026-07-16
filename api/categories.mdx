@@ -1,0 +1,74 @@
+---
+title: Categories API
+description: 'Manage announcement categories via the API'
+---
+
+# Categories API
+
+Manage the categories used to organize your announcements. All endpoints require [authentication](/api/authentication) and return JSON.
+
+Base URL: `https://app.updates.page`
+
+## List categories
+
+```
+GET /api/v1/categories
+```
+
+```bash
+curl https://app.updates.page/api/v1/categories \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+Returns an array of categories:
+
+```json
+[
+  { "id": 1, "name": "New", "color": "#10B981" },
+  { "id": 2, "name": "Improvement", "color": "#3B82F6" },
+  { "id": 3, "name": "Fix", "color": "#F59E0B" }
+]
+```
+
+Use the `id` values as `category_id` when [creating announcements](/api/announcements#create-an-announcement).
+
+## Create a category
+
+```
+POST /api/v1/categories
+```
+
+```bash
+curl -X POST https://app.updates.page/api/v1/categories \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Security", "color": "#EF4444"}'
+```
+
+## Update a category
+
+```
+PATCH /api/v1/categories/:id
+```
+
+```bash
+curl -X PATCH https://app.updates.page/api/v1/categories/4 \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Security & Privacy"}'
+```
+
+## Delete a category
+
+```
+DELETE /api/v1/categories/:id
+```
+
+```bash
+curl -X DELETE https://app.updates.page/api/v1/categories/4 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+<Warning>
+  Deleting a category removes it from all existing announcements. The announcements themselves are not deleted.
+</Warning>

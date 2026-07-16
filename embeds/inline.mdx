@@ -1,178 +1,69 @@
 ---
-title: Inline Embed
-description: 'Display announcements directly on your page'
+title: JavaScript API
+description: 'Open and close the embed panel from your own code'
 ---
 
-# Inline Embed
+# JavaScript API
 
-The inline embed displays your announcements directly within your page content, styled to match your site.
+Once your embed script is loaded on the page, a small JavaScript API is available at `window.UpdatesPage` for controlling the slide-over panel programmatically.
 
-[TODO: ADD IMAGE - INLINE EMBED ON A MARKETING SITE]
+<Note>
+  Embeds are available on the **Business** plan. See [Installing an Embed](/embeds/widget) for setup.
+</Note>
 
-## Installation
+## Methods
 
-### 1. Create an inline embed
+Both methods take your embed ID (the same ID that appears in your embed's script tag URL).
 
-1. Go to **Settings → Developer → Embeds**
-2. Click **New Embed**
-3. Select **Inline** as the type
-4. Configure your settings
-5. Click **Create**
+### Open the panel
 
-### 2. Add the container
+```javascript
+window.UpdatesPage.open("<embed-id>")
+```
 
-Add a container element where you want the announcements to appear:
+### Close the panel
+
+```javascript
+window.UpdatesPage.close("<embed-id>")
+```
+
+## Using a custom trigger
+
+By default, the embed renders its own trigger button where the script tag is placed. To use your own button, link, or menu item instead:
+
+1. In the dashboard, go to **Account → Embeds** and open your embed in the editor
+2. Set the **action style** to **custom** — this hides the default button
+3. Call `window.UpdatesPage.open("<embed-id>")` from your own UI
 
 ```html
-<div id="updates-page-embed"></div>
+<button id="whats-new">What's New</button>
+
+<script>
+  document.querySelector('#whats-new').addEventListener('click', () => {
+    window.UpdatesPage.open("<embed-id>")
+  })
+</script>
 ```
 
-### 3. Add the script
+## Example: open from a navigation menu
 
-Copy and paste the script tag:
-
-```html
-<div id="updates-page-embed"></div>
-
-<script 
-  src="https://cdn.updates.page/inline.js" 
-  data-embed-id="your-embed-id"
-  data-container="#updates-page-embed"
-  async
-></script>
+```javascript
+// Open the announcements panel when a nav item is clicked
+document.querySelector('#nav-whats-new').addEventListener('click', (event) => {
+  event.preventDefault()
+  window.UpdatesPage.open("<embed-id>")
+})
 ```
 
-## Configuration options
+## Multiple embeds
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| **Container** | CSS selector for the container element | `#updates-page-embed` |
-| **Theme** | Light or dark | Light |
-| **Limit** | Number of announcements to show | 10 |
-| **Categories** | Which categories to include | All |
-| **Show images** | Display cover images | Yes |
-| **Show dates** | Display publication dates | Yes |
-| **Show authors** | Display author names | Yes |
+If you have more than one embed on a page, pass the ID of the embed you want to control:
 
-## Customizing with CSS
-
-The inline embed uses minimal default styling so you can customize it to match your site.
-
-### Available CSS classes
-
-```css
-/* Container */
-.updates-page-inline { }
-
-/* Individual announcement */
-.updates-page-announcement { }
-
-/* Announcement title */
-.updates-page-title { }
-
-/* Announcement content/summary */
-.updates-page-content { }
-
-/* Cover image */
-.updates-page-image { }
-
-/* Category badge */
-.updates-page-category { }
-
-/* Date */
-.updates-page-date { }
-
-/* Author */
-.updates-page-author { }
-
-/* "View all" link */
-.updates-page-view-all { }
+```javascript
+window.UpdatesPage.open("embed-id-one")
+window.UpdatesPage.close("embed-id-two")
 ```
 
-### Example: Card-style layout
-
-```css
-.updates-page-announcement {
-  background: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.updates-page-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.updates-page-content {
-  color: #666;
-  line-height: 1.6;
-}
-
-.updates-page-category {
-  display: inline-block;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-```
-
-[TODO: ADD IMAGE - BEFORE/AFTER CUSTOM CSS STYLING]
-
-## Data attributes
-
-Customize behavior with data attributes:
-
-```html
-<script 
-  src="https://cdn.updates.page/inline.js" 
-  data-embed-id="your-embed-id"
-  data-container="#updates-page-embed"
-  data-limit="5"
-  data-show-images="false"
-  data-theme="dark"
-  async
-></script>
-```
-
-| Attribute | Type | Description |
-|-----------|------|-------------|
-| `data-embed-id` | string | Your embed ID (required) |
-| `data-container` | string | CSS selector for container |
-| `data-limit` | number | Max announcements to show |
-| `data-show-images` | boolean | Show cover images |
-| `data-show-dates` | boolean | Show publication dates |
-| `data-show-authors` | boolean | Show author names |
-| `data-theme` | string | "light" or "dark" |
-
-## Linking to full changelog
-
-The inline embed automatically includes a "View all updates" link to your full portal.
-
-To customize or hide this link:
-
-```html
-<!-- Hide the "View all" link -->
-<script 
-  src="https://cdn.updates.page/inline.js" 
-  data-embed-id="your-embed-id"
-  data-hide-view-all="true"
-  async
-></script>
-```
-
-Or style it with CSS:
-
-```css
-.updates-page-view-all {
-  display: inline-block;
-  padding: 12px 24px;
-  background: #000;
-  color: #fff;
-  border-radius: 6px;
-  text-decoration: none;
-}
-```
+<Tip>
+  Make sure the embed's script tag has loaded before calling `window.UpdatesPage` — place your code after the script tag, or wait for page load.
+</Tip>

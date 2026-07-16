@@ -1,0 +1,60 @@
+---
+title: Authentication
+description: 'Authenticate with the updates.page API'
+---
+
+# Authentication
+
+The updates.page API lets you create, publish, and manage announcements programmatically.
+
+<Note>
+  API access is available on the **Business** plan.
+</Note>
+
+## Base URL
+
+All API requests are made to:
+
+```
+https://app.updates.page
+```
+
+All endpoints accept and return JSON.
+
+## Creating an API key
+
+<Steps>
+  <Step title="Go to API Keys">
+    In the dashboard, navigate to **Account → API Keys**
+  </Step>
+  <Step title="Create a key">
+    Click to create a new API key and give it a descriptive name
+  </Step>
+  <Step title="Copy the key">
+    Copy the key and store it somewhere safe
+  </Step>
+</Steps>
+
+<Warning>
+  Treat API keys like passwords. Don't commit them to source control or expose them in client-side code.
+</Warning>
+
+## Using your API key
+
+Send your key in the `Authorization` header as a Bearer token:
+
+```bash
+curl https://app.updates.page/api/v1/announcements \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Announcements" icon="bullhorn" href="/api/announcements">
+    List, create, publish, and delete announcements
+  </Card>
+  <Card title="Categories" icon="tag" href="/api/categories">
+    Manage the categories used to organize announcements
+  </Card>
+</CardGroup>
