@@ -16,8 +16,6 @@ Configure your portal's meta tags in **Settings → Portal → Analytics & SEO**
 | **Meta title** | Page title in search results | "[Company] Changelog" or "What's New at [Company]" |
 | **Meta description** | Description in search results | 150-160 characters describing your changelog |
 
-[TODO: ADD IMAGE - SEO SETTINGS PANEL]
-
 ## How it works
 
 updates.page automatically generates:
@@ -30,23 +28,21 @@ updates.page automatically generates:
 - Twitter Card tags
 - JSON-LD structured data (WebSite schema)
 
-### For individual announcements
-- `<title>` — "[Announcement Title] - [Meta Title]"
-- `<meta name="description">` — Announcement summary
-- `<link rel="canonical">` — Announcement URL
-- Open Graph tags with announcement details
+### For individual posts
+- `<title>` — "[Post Title] - [Meta Title]"
+- `<meta name="description">` — Post summary
+- `<link rel="canonical">` — Post URL
+- Open Graph tags with post details
 - Twitter Cards (large image if cover image exists)
 - JSON-LD structured data (Article schema)
 
 ## Social sharing preview
 
-When your changelog or announcements are shared on social media, they'll display:
+When your changelog or posts are shared on social media, they'll display:
 
-- **Title** — Page or announcement title
-- **Description** — Meta description or announcement summary
+- **Title** — Page or post title
+- **Description** — Meta description or post summary
 - **Image** — Cover image (if set) or your logo
-
-[TODO: ADD IMAGE - SOCIAL SHARE PREVIEW EXAMPLE (TWITTER/LINKEDIN)]
 
 <Tip>
   Use [opengraph.xyz](https://opengraph.xyz) to preview how your pages will look when shared.
@@ -70,11 +66,11 @@ By default, your portal is indexable by search engines. To prevent indexing:
   <Accordion title="Write descriptive titles">
     Include your company name and keywords like "changelog," "updates," or "what's new."
   </Accordion>
-  <Accordion title="Use announcement summaries">
-    The first ~160 characters of your announcement become the meta description. Make them count.
+  <Accordion title="Use post summaries">
+    The first ~160 characters of your post become the meta description. Make them count.
   </Accordion>
   <Accordion title="Add cover images">
-    Announcements with cover images get better engagement when shared on social media.
+    Posts with cover images get better engagement when shared on social media.
   </Accordion>
   <Accordion title="Use a custom domain">
     `changelog.yourcompany.com` looks more professional and may rank better than a subdomain.

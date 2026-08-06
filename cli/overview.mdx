@@ -1,0 +1,103 @@
+---
+title: CLI
+description: 'Publish posts from your terminal or CI pipeline'
+---
+
+# updates.page CLI
+
+The `@updatespage/cli` package lets you create and publish posts from your terminal — perfect for release scripts and CI pipelines.
+
+<Note>
+  The CLI uses the updates.page API, which is available on the **Business** plan.
+</Note>
+
+## Installation
+
+Requires **Node.js 20+**.
+
+```bash
+npm install -g @updatespage/cli
+```
+
+## Setup
+
+Create an API key in the dashboard under **Account → API Keys** (see [Authentication](/api/authentication)), then configure the CLI:
+
+```bash
+updates config --api-key YOUR_API_KEY
+```
+
+The CLI talks to `https://app.updates.page` by default. For a self-hosted instance, pass `--url`:
+
+```bash
+updates config --api-key YOUR_API_KEY --url https://updates.example.com
+```
+
+Configuration is stored at `~/.updatespage/config.json`.
+
+## Commands
+
+### Publish a post
+
+```bash
+updates publish --title "New: Dark mode is here" \
+  --content "<p>You can now switch to dark mode from your profile menu.</p>"
+```
+
+Optionally assign a category:
+
+```bash
+updates publish --title "Patched XSS vulnerability" \
+  --content "<p>We fixed a security issue reported by a customer.</p>" \
+  --category-id 4
+```
+
+<Tip>
+  Run `updates categories` to find your category IDs.
+</Tip>
+
+### Create a draft
+
+Creates the post without publishing it:
+
+```bash
+updates draft --title "Upcoming: SSO" --content "<p>Draft copy...</p>"
+```
+
+### List posts
+
+```bash
+updates list
+```
+
+Filter by status:
+
+```bash
+updates list --status draft
+updates list --status published
+```
+
+### Get a post
+
+```bash
+updates get <id>
+```
+
+### List categories
+
+```bash
+updates categories
+```
+
+## Using in CI
+
+Store your API key as a secret in your CI provider and configure the CLI in your release step:
+
+```bash
+updates config --api-key "$UPDATES_PAGE_API_KEY"
+updates publish --title "v2.4.0 released" --content "<p>See the full notes on our changelog.</p>"
+```
+
+## Going further
+
+The CLI covers the most common workflows. For everything else — scheduling, unpublishing, deleting, managing categories — use the [REST API](/api/authentication) directly.

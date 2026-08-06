@@ -1,39 +1,40 @@
 ---
-title: Widget Embed
-description: 'Add a floating changelog widget to your app'
+title: Installing an Embed
+description: 'Add the posts panel to your app with one script tag'
 ---
 
-# Widget Embed
+# Installing an Embed
 
-The widget embed adds a floating button to your app that opens a slide-out panel with your announcements.
+The embed adds a trigger button to your app that opens a slide-over panel with your latest posts.
 
-[TODO: ADD GIF - WIDGET BUTTON CLICK -> PANEL OPENS -> SCROLLING THROUGH ANNOUNCEMENTS]
+<Note>
+  Embeds are available on the **Business** plan.
+</Note>
 
 ## Installation
 
-### 1. Create a widget embed
+### 1. Create an embed
 
-1. Go to **Settings → Developer → Embeds**
+1. In the dashboard, go to **Account → Embeds**
 2. Click **New Embed**
-3. Select **Widget** as the type
-4. Configure your settings (see below)
-5. Click **Create**
+3. Configure it in the embed editor (theme, placement, colors, button label, heading text)
+4. Save
 
-### 2. Copy the script
+### 2. Copy the script tag
 
-Copy the generated script tag:
+The dashboard shows a unique script tag for your embed. It looks like this:
 
 ```html
-<script 
-  src="https://cdn.updates.page/widget.js" 
-  data-embed-id="your-embed-id"
-  async
-></script>
+<script type="text/javascript" src="https://.../<embed-id>.js"></script>
 ```
 
-### 3. Add to your site
+<Warning>
+  Always copy the exact script tag from your dashboard — the URL contains your embed's unique ID.
+</Warning>
 
-Paste the script tag before the closing `</body>` tag on every page where you want the widget to appear.
+### 3. Add it to your site
+
+Paste the script tag before the closing `</body>` tag on every page where you want the embed to appear. The trigger button renders where the tag is placed.
 
 ```html
 <!DOCTYPE html>
@@ -41,107 +42,38 @@ Paste the script tag before the closing `</body>` tag on every page where you wa
   <head>...</head>
   <body>
     <!-- Your app content -->
-    
-    <!-- updates.page widget -->
-    <script 
-      src="https://cdn.updates.page/widget.js" 
-      data-embed-id="your-embed-id"
-      async
-    ></script>
+
+    <!-- updates.page embed (copy your exact tag from Account → Embeds) -->
+    <script type="text/javascript" src="https://.../<embed-id>.js"></script>
   </body>
 </html>
 ```
 
-## Configuration options
+That's it — clicking the button opens the slide-over panel with your latest posts.
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| **Position** | Bottom-left or bottom-right | Bottom-right |
-| **Theme** | Light or dark | Light |
-| **Show badge** | Display "new" indicator | Yes |
-| **Badge color** | Color of the notification badge | Red |
-| **Categories** | Which categories to include | All |
+## Using your own trigger
 
-[TODO: ADD IMAGE - WIDGET CONFIGURATION PANEL]
-
-## Customizing the trigger button
-
-### Default button
-
-By default, the widget shows a floating button with a bell icon.
-
-### Custom trigger
-
-To use your own button, add `data-updates-trigger` to any element:
+Don't want the default button? In the dashboard embed editor, set the embed's **action style** to **custom**. This hides the default button so you can open the panel from your own UI using the JavaScript API:
 
 ```html
-<button data-updates-trigger>What's New</button>
+<button id="whats-new">What's New</button>
 
-<script 
-  src="https://cdn.updates.page/widget.js" 
-  data-embed-id="your-embed-id"
-  data-hide-button="true"
-  async
-></script>
+<script>
+  document.querySelector('#whats-new').addEventListener('click', () => {
+    window.UpdatesPage.open("<embed-id>")
+  })
+</script>
 ```
 
-The `data-hide-button="true"` attribute hides the default floating button.
+See the [JavaScript API](/embeds/inline) page for details.
 
-## "New" badge
+## Customizing the look
 
-The widget shows a red badge when there are announcements the user hasn't seen.
+All visual customization — theme, placement, panel size, colors, button label, heading text, and the updates.page badge — is configured in the dashboard embed editor, not in your HTML. See [Customizing Embeds](/embeds/styling).
 
-[TODO: ADD IMAGE - WIDGET BUTTON WITH RED BADGE]
+## Framework notes
 
-### How it works
-
-- Badge appears when new announcements are published
-- Disappears when the user opens the widget
-- Uses localStorage to track what's been seen
-
-### Disabling the badge
-
-Add `data-hide-badge="true"` to the script tag:
-
-```html
-<script 
-  src="https://cdn.updates.page/widget.js" 
-  data-embed-id="your-embed-id"
-  data-hide-badge="true"
-  async
-></script>
-```
-
-## JavaScript API
-
-Control the widget programmatically:
-
-```javascript
-// Open the widget
-window.UpdatesPage.open()
-
-// Close the widget
-window.UpdatesPage.close()
-
-// Toggle the widget
-window.UpdatesPage.toggle()
-
-// Check if widget is open
-window.UpdatesPage.isOpen()
-
-// Get unread count
-window.UpdatesPage.getUnreadCount()
-```
-
-### Example: Open on custom event
-
-```javascript
-document.querySelector('#whats-new-link').addEventListener('click', () => {
-  window.UpdatesPage.open()
-})
-```
-
-## Framework guides
+The embed is a plain script tag, so it works with any framework. Inject it once in your root layout or app shell:
 
 <AccordionGroup>
   <Accordion title="React">
@@ -151,21 +83,21 @@ document.querySelector('#whats-new-link').addEventListener('click', () => {
     function App() {
       useEffect(() => {
         const script = document.createElement('script')
-        script.src = 'https://cdn.updates.page/widget.js'
-        script.dataset.embedId = 'your-embed-id'
-        script.async = true
+        script.type = 'text/javascript'
+        // Use the exact URL from your dashboard (Account → Embeds)
+        script.src = 'https://.../<embed-id>.js'
         document.body.appendChild(script)
-        
+
         return () => document.body.removeChild(script)
       }, [])
-      
+
       return <div>...</div>
     }
     ```
   </Accordion>
   <Accordion title="Next.js">
-    Use the Script component:
-    
+    Use the Script component in your root layout:
+
     ```jsx
     import Script from 'next/script'
 
@@ -173,11 +105,8 @@ document.querySelector('#whats-new-link').addEventListener('click', () => {
       return (
         <>
           {children}
-          <Script 
-            src="https://cdn.updates.page/widget.js"
-            data-embed-id="your-embed-id"
-            strategy="lazyOnload"
-          />
+          {/* Use the exact URL from your dashboard (Account → Embeds) */}
+          <Script src="https://.../<embed-id>.js" strategy="lazyOnload" />
         </>
       )
     }
@@ -193,9 +122,9 @@ document.querySelector('#whats-new-link').addEventListener('click', () => {
     export default {
       mounted() {
         const script = document.createElement('script')
-        script.src = 'https://cdn.updates.page/widget.js'
-        script.dataset.embedId = 'your-embed-id'
-        script.async = true
+        script.type = 'text/javascript'
+        // Use the exact URL from your dashboard (Account → Embeds)
+        script.src = 'https://.../<embed-id>.js'
         document.body.appendChild(script)
       }
     }

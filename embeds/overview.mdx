@@ -1,13 +1,19 @@
 ---
 title: Embeds Overview
-description: 'Show your changelog inside your app or website'
+description: 'Show your latest posts inside your app or website'
 ---
 
 # Embeds
 
-Bring your changelog directly into your product with embeddable widgets.
+Bring your changelog directly into your product with an embeddable posts panel.
 
-[TODO: ADD IMAGE - EMBED EXAMPLES (WIDGET + INLINE) SIDE BY SIDE]
+<Note>
+  Embeds are available on the **Business** plan.
+</Note>
+
+## How embeds work
+
+An embed is a single script tag you paste into your site. It renders a trigger button where the tag is placed, and clicking the button opens a slide-over panel showing your latest posts — users never have to leave your app to see what's new.
 
 ## Why embed?
 
@@ -19,88 +25,64 @@ Bring your changelog directly into your product with embeddable widgets.
     More users see your updates when they're in-context
   </Card>
   <Card title="Drive engagement" icon="message">
-    "What's new" badges catch attention
+    A "What's new" entry point catches attention
   </Card>
   <Card title="Seamless experience" icon="puzzle-piece">
-    Embeds match your app's look and feel
+    Configure theme, colors, and copy to match your app
   </Card>
 </CardGroup>
-
-## Embed types
-
-updates.page offers two embed types:
-
-### Widget embed
-
-A floating button that opens a slide-out panel with your announcements.
-
-**Best for:**
-- SaaS apps and dashboards
-- "What's new" button in navigation
-- Unobtrusive changelog access
-
-[TODO: ADD GIF - WIDGET OPENING AND SHOWING ANNOUNCEMENTS]
-
-→ [Set up a widget embed](/embeds/widget)
-
-### Inline embed
-
-Announcements displayed directly on your page, styled to match your site.
-
-**Best for:**
-- Marketing websites
-- Changelog pages
-- Documentation sites
-
-[TODO: ADD IMAGE - INLINE EMBED EXAMPLE]
-
-→ [Set up an inline embed](/embeds/inline)
-
-## Quick comparison
-
-| Feature | Widget | Inline |
-|---------|--------|--------|
-| Installation | 1 script tag | 1 script tag + container |
-| Visibility | On-demand (click to open) | Always visible |
-| Customization | Colors, position | Full CSS control |
-| "New" badge | ✓ | ✗ |
-| Best for | Apps | Websites |
 
 ## Creating an embed
 
 <Steps>
   <Step title="Go to Embeds">
-    Navigate to **Settings → Developer → Embeds**
+    In the dashboard, navigate to **Account → Embeds**
   </Step>
   <Step title="Create new embed">
-    Click **New Embed** and choose Widget or Inline
+    Click **New Embed** and give it a name
   </Step>
   <Step title="Configure">
-    Set the name, style, and options
+    Use the embed editor to set the theme, placement, colors, button label, and heading text
   </Step>
-  <Step title="Copy the code">
-    Copy the generated script tag to your site
+  <Step title="Copy the script tag">
+    The dashboard generates a unique script tag for your embed — copy it and paste it into your site before the closing `</body>` tag
   </Step>
 </Steps>
 
-## Embed settings
+The script tag looks like this (always copy the exact tag from your dashboard — it contains your embed's unique ID):
 
-Each embed can be configured with:
+```html
+<script type="text/javascript" src="https://.../<embed-id>.js"></script>
+```
 
-| Setting | Description |
-|---------|-------------|
-| **Name** | Internal name for your reference |
-| **Type** | Widget or Inline |
-| **Position** | (Widget only) Bottom-left or bottom-right |
-| **Theme** | Light or dark mode |
-| **Categories** | Filter which categories to show |
+→ [Full installation guide](/embeds/widget)
+
+## Customization
+
+All embed customization happens in the dashboard embed editor — no HTML attributes or custom CSS required. You can configure:
+
+- **Theme** — light or dark
+- **Placement** — left, center, or right
+- **Panel size**
+- **Colors**
+- **Button label**
+- **Heading text**
+- **updates.page badge** — show or hide
+
+→ [Customizing your embed](/embeds/styling)
+
+## Triggering from your own UI
+
+Prefer to open the panel from your own button, link, or menu item? Set the embed's action style to **custom** in the dashboard and use the JavaScript API:
+
+```javascript
+window.UpdatesPage.open("<embed-id>")
+```
+
+→ [JavaScript API](/embeds/inline)
 
 ## Managing embeds
 
-You can create multiple embeds for different use cases:
+You can create multiple embeds for different use cases — for example, one for your main app and one for your marketing site, each with its own theme and copy.
 
-- One widget for your main app
-- One inline embed for your marketing site
-- Different category filters for different audiences
-
-Edit or delete embeds anytime in **Settings → Developer → Embeds**.
+Edit or delete embeds anytime in **Account → Embeds**.

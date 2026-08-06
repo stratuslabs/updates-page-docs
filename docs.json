@@ -29,16 +29,16 @@
         "pages": [
           "introduction",
           "quickstart",
-          "first-announcement"
+          "first-post"
         ]
       },
       {
-        "group": "Announcements",
+        "group": "Posts",
         "pages": [
-          "announcements/writing",
-          "announcements/categories",
-          "announcements/scheduling",
-          "announcements/cover-images"
+          "posts/writing",
+          "posts/categories",
+          "posts/scheduling",
+          "posts/cover-images"
         ]
       },
       {
@@ -61,6 +61,20 @@
         ]
       },
       {
+        "group": "API Reference",
+        "pages": [
+          "api/authentication",
+          "api/posts",
+          "api/categories"
+        ]
+      },
+      {
+        "group": "CLI",
+        "pages": [
+          "cli/overview"
+        ]
+      },
+      {
         "group": "Team",
         "pages": [
           "team/members",
@@ -78,6 +92,20 @@
   },
   "footerSocials": {
     "twitter": "https://twitter.com/updatespage",
-    "github": "https://github.com/updatespage"
-  }
+    "github": "https://github.com/stellarco"
+  },
+  "redirects": [
+    {
+      "source": "/announcements/:slug*",
+      "destination": "/posts/:slug*"
+    },
+    {
+      "source": "/first-announcement",
+      "destination": "/first-post"
+    },
+    {
+      "source": "/api/announcements",
+      "destination": "/api/posts"
+    }
+  ]
 }
