@@ -93,5 +93,19 @@
   "footerSocials": {
     "twitter": "https://twitter.com/updatespage",
     "github": "https://github.com/stellarco"
-  }
+  },
+  "redirects": [
+    {
+      "source": "/announcements/:slug*",
+      "destination": "/posts/:slug*"
+    },
+    {
+      "source": "/first-announcement",
+      "destination": "/first-post"
+    },
+    {
+      "source": "/api/announcements",
+      "destination": "/api/posts"
+    }
+  ]
 }
