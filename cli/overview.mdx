@@ -1,11 +1,11 @@
 ---
 title: CLI
-description: 'Publish announcements from your terminal or CI pipeline'
+description: 'Publish posts from your terminal or CI pipeline'
 ---
 
 # updates.page CLI
 
-The `@updatespage/cli` package lets you create and publish announcements from your terminal — perfect for release scripts and CI pipelines.
+The `@updatespage/cli` package lets you create and publish posts from your terminal — perfect for release scripts and CI pipelines.
 
 <Note>
   The CLI uses the updates.page API, which is available on the **Business** plan.
@@ -37,7 +37,7 @@ Configuration is stored at `~/.updatespage/config.json`.
 
 ## Commands
 
-### Publish an announcement
+### Publish a post
 
 ```bash
 updates publish --title "New: Dark mode is here" \
@@ -58,13 +58,13 @@ updates publish --title "Patched XSS vulnerability" \
 
 ### Create a draft
 
-Creates the announcement without publishing it:
+Creates the post without publishing it:
 
 ```bash
 updates draft --title "Upcoming: SSO" --content "<p>Draft copy...</p>"
 ```
 
-### List announcements
+### List posts
 
 ```bash
 updates list
@@ -77,7 +77,7 @@ updates list --status draft
 updates list --status published
 ```
 
-### Get an announcement
+### Get a post
 
 ```bash
 updates get <id>

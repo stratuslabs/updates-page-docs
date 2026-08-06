@@ -29,16 +29,16 @@
         "pages": [
           "introduction",
           "quickstart",
-          "first-announcement"
+          "first-post"
         ]
       },
       {
-        "group": "Announcements",
+        "group": "Posts",
         "pages": [
-          "announcements/writing",
-          "announcements/categories",
-          "announcements/scheduling",
-          "announcements/cover-images"
+          "posts/writing",
+          "posts/categories",
+          "posts/scheduling",
+          "posts/cover-images"
         ]
       },
       {
@@ -64,7 +64,7 @@
         "group": "API Reference",
         "pages": [
           "api/authentication",
-          "api/announcements",
+          "api/posts",
           "api/categories"
         ]
       },

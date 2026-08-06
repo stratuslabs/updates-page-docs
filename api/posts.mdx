@@ -1,28 +1,28 @@
 ---
-title: Announcements API
-description: 'Create, publish, and manage announcements via the API'
+title: Posts API
+description: 'Create, publish, and manage posts via the API'
 ---
 
-# Announcements API
+# Posts API
 
-Manage announcements programmatically. All endpoints require [authentication](/api/authentication) and return JSON.
+Manage posts programmatically. All endpoints require [authentication](/api/authentication) and return JSON.
 
 Base URL: `https://app.updates.page`
 
-## List announcements
+## List posts
 
 ```
-GET /api/v1/announcements
+GET /api/v1/posts
 ```
 
 Optionally filter by status with `?status=draft`, `?status=published`, or `?status=scheduled`.
 
 ```bash
-curl "https://app.updates.page/api/v1/announcements?status=published" \
+curl "https://app.updates.page/api/v1/posts?status=published" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-Returns an array of announcements:
+Returns an array of posts:
 
 ```json
 [
@@ -40,16 +40,16 @@ Returns an array of announcements:
 ]
 ```
 
-## Get an announcement
+## Get a post
 
 ```
-GET /api/v1/announcements/:id
+GET /api/v1/posts/:id
 ```
 
-Returns the full announcement, including its content, summary, category, and cover image.
+Returns the full post, including its content, summary, category, and cover image.
 
 ```bash
-curl https://app.updates.page/api/v1/announcements/42 \
+curl https://app.updates.page/api/v1/posts/42 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -73,20 +73,20 @@ curl https://app.updates.page/api/v1/announcements/42 \
 }
 ```
 
-## Create an announcement
+## Create a post
 
 ```
-POST /api/v1/announcements
+POST /api/v1/posts
 ```
 
-Creates a draft announcement. `content` is HTML. `category_id` is optional — see the [Categories API](/api/categories) to list your category IDs.
+Creates a draft post. `content` is HTML. `category_id` is optional — see the [Categories API](/api/categories) to list your category IDs.
 
 ```bash
-curl -X POST https://app.updates.page/api/v1/announcements \
+curl -X POST https://app.updates.page/api/v1/posts \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "announcement": {
+    "post": {
       "title": "New: Dark mode is here",
       "content": "<p>You can now switch to dark mode from your profile menu.</p>",
       "category_id": 123
@@ -94,54 +94,54 @@ curl -X POST https://app.updates.page/api/v1/announcements \
   }'
 ```
 
-Returns the created announcement.
+Returns the created post.
 
-## Publish an announcement
+## Publish a post
 
 ```
-POST /api/v1/announcements/:id/publish
+POST /api/v1/posts/:id/publish
 ```
 
-Publishes an announcement immediately:
+Publishes a post immediately:
 
 ```bash
-curl -X POST https://app.updates.page/api/v1/announcements/42/publish \
+curl -X POST https://app.updates.page/api/v1/posts/42/publish \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 To schedule it instead, pass an ISO 8601 `published_at` in the body:
 
 ```bash
-curl -X POST https://app.updates.page/api/v1/announcements/42/publish \
+curl -X POST https://app.updates.page/api/v1/posts/42/publish \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"published_at": "2026-08-01T09:00:00Z"}'
 ```
 
-## Unpublish an announcement
+## Unpublish a post
 
 ```
-POST /api/v1/announcements/:id/unpublish
+POST /api/v1/posts/:id/unpublish
 ```
 
-Reverts a published announcement to a draft:
+Reverts a published post to a draft:
 
 ```bash
-curl -X POST https://app.updates.page/api/v1/announcements/42/unpublish \
+curl -X POST https://app.updates.page/api/v1/posts/42/unpublish \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-## Delete an announcement
+## Delete a post
 
 ```
-DELETE /api/v1/announcements/:id
+DELETE /api/v1/posts/:id
 ```
 
 ```bash
-curl -X DELETE https://app.updates.page/api/v1/announcements/42 \
+curl -X DELETE https://app.updates.page/api/v1/posts/42 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 <Warning>
-  Deleting an announcement is permanent.
+  Deleting a post is permanent.
 </Warning>

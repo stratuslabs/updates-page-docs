@@ -1,11 +1,11 @@
 ---
 title: Categories API
-description: 'Manage announcement categories via the API'
+description: 'Manage post categories via the API'
 ---
 
 # Categories API
 
-Manage the categories used to organize your announcements. All endpoints require [authentication](/api/authentication) and return JSON.
+Manage the categories used to organize your posts. All endpoints require [authentication](/api/authentication) and return JSON.
 
 Base URL: `https://app.updates.page`
 
@@ -30,7 +30,7 @@ Returns an array of categories:
 ]
 ```
 
-Use the `id` values as `category_id` when [creating announcements](/api/announcements#create-an-announcement).
+Use the `id` values as `category_id` when [creating posts](/api/posts#create-an-post).
 
 ## Create a category
 
@@ -70,5 +70,5 @@ curl -X DELETE https://app.updates.page/api/v1/categories/4 \
 ```
 
 <Warning>
-  Deleting a category removes it from all existing announcements. The announcements themselves are not deleted.
+  Deleting a category removes it from all existing posts. The posts themselves are not deleted.
 </Warning>

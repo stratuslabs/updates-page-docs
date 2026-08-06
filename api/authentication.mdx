@@ -5,7 +5,7 @@ description: 'Authenticate with the updates.page API'
 
 # Authentication
 
-The updates.page API lets you create, publish, and manage announcements programmatically.
+The updates.page API lets you create, publish, and manage posts programmatically.
 
 <Note>
   API access is available on the **Business** plan.
@@ -44,17 +44,17 @@ All endpoints accept and return JSON.
 Send your key in the `Authorization` header as a Bearer token:
 
 ```bash
-curl https://app.updates.page/api/v1/announcements \
+curl https://app.updates.page/api/v1/posts \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ## Endpoints
 
 <CardGroup cols={2}>
-  <Card title="Announcements" icon="bullhorn" href="/api/announcements">
-    List, create, publish, and delete announcements
+  <Card title="Posts" icon="bullhorn" href="/api/posts">
+    List, create, publish, and delete posts
   </Card>
   <Card title="Categories" icon="tag" href="/api/categories">
-    Manage the categories used to organize announcements
+    Manage the categories used to organize posts
   </Card>
 </CardGroup>
