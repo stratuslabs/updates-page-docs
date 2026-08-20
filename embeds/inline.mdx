@@ -31,7 +31,7 @@ window.UpdatesPage.close("<embed-id>")
 
 By default, the embed renders its own trigger button where the script tag is placed. To use your own button, link, or menu item instead:
 
-1. In the dashboard, go to **Account → Embeds** and open your embed in the editor
+1. In the dashboard, go to **Settings → Developer → Embeds** and open your embed in the editor
 2. Set the **action style** to **custom** — this hides the default button
 3. Call `window.UpdatesPage.open("<embed-id>")` from your own UI
 
@@ -48,7 +48,7 @@ By default, the embed renders its own trigger button where the script tag is pla
 ## Example: open from a navigation menu
 
 ```javascript
-// Open the posts panel when a nav item is clicked
+// Open the What’s New panel when a nav item is clicked
 document.querySelector('#nav-whats-new').addEventListener('click', (event) => {
   event.preventDefault()
   window.UpdatesPage.open("<embed-id>")

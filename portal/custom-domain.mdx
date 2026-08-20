@@ -22,7 +22,7 @@ Use your own domain (like `changelog.yourcompany.com`) for a seamless brand expe
     </Tip>
   </Step>
   <Step title="Add the domain in updates.page">
-    Go to **Settings → Portal → Domain Name** and enter your full domain (e.g., `changelog.yourcompany.com`).
+    Go to **Settings → Portal → Domain Name**, click **Connect domain name**, and enter your full domain (e.g., `changelog.yourcompany.com`).
   </Step>
   <Step title="Configure DNS">
     Add a CNAME record pointing to `cname.updates.page`:
@@ -35,8 +35,8 @@ Use your own domain (like `changelog.yourcompany.com`) for a seamless brand expe
       DNS changes can take up to 48 hours to propagate, but usually complete within a few minutes.
     </Info>
   </Step>
-  <Step title="Verify and enable SSL">
-    Click **Verify** in your updates.page settings. Once verified, SSL will be automatically provisioned.
+  <Step title="Check DNS">
+    Click **Check DNS**. Once the status reads **Verified**, SSL is provisioned automatically.
   </Step>
 </Steps>
 
@@ -92,7 +92,7 @@ Use your own domain (like `changelog.yourcompany.com`) for a seamless brand expe
 <AccordionGroup>
   <Accordion title="Domain won't verify">
     - Double-check the CNAME record is pointing to `cname.updates.page`
-    - Wait a few minutes for DNS propagation
+    - Wait a few minutes for DNS propagation, then click **Check DNS** again
     - Use [dnschecker.org](https://dnschecker.org) to verify your DNS is propagated
   </Accordion>
   <Accordion title="SSL certificate not working">

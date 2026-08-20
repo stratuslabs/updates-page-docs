@@ -13,14 +13,14 @@ Plan ahead by scheduling posts to publish automatically at a future date and tim
   <Step title="Create your post">
     Write your post as usual in the editor.
   </Step>
-  <Step title="Click the publish dropdown">
-    Instead of clicking **Publish**, click the dropdown arrow next to it.
+  <Step title="Click Publish">
+    The publish dialog opens with **Now** selected.
   </Step>
-  <Step title="Select 'Schedule'">
-    Choose the date and time you want the post to go live.
+  <Step title="Switch to Later">
+    Pick the date and time you want the post to go live.
   </Step>
-  <Step title="Confirm">
-    Click **Schedule** to confirm. Your post will publish automatically.
+  <Step title="Click Schedule">
+    Your post publishes automatically at that time.
   </Step>
 </Steps>
 
@@ -30,21 +30,17 @@ Scheduled posts appear in your posts list with a **Scheduled** badge.
 
 You can:
 - **Edit** the content before it publishes
-- **Reschedule** to a different time
-- **Publish now** to make it live immediately
+- **Reschedule** — reopen the publish dialog and pick a new time
+- **Publish now** — reopen the dialog and choose **Now**
 - **Delete** to cancel the scheduled post
 
 ## Timezone handling
 
-Scheduled times use your account's timezone setting. To change your timezone:
+Scheduled times use your computer's timezone — the time you pick is the time you see. Behind the scenes it's stored as an exact moment, so a teammate in another timezone sees the same post publish at the same instant.
 
-1. Go to **Settings → Account → General**
-2. Select your timezone from the dropdown
-3. Click **Save**
-
-<Note>
-  Changing your timezone won't affect already-scheduled posts. They'll still publish at the originally intended moment.
-</Note>
+<Tip>
+  Scheduling from the [CLI](/cli/overview)? `--at` takes ISO 8601, and a value without a timezone is read as local time.
+</Tip>
 
 ## Use cases for scheduling
 

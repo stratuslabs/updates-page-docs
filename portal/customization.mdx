@@ -5,100 +5,53 @@ description: 'Make your changelog match your brand'
 
 # Portal Customization
 
-Customize your changelog portal to match your brand identity.
+Customize your changelog portal in **Settings → Portal → Customize**. Changes save as you go.
 
-## Basic customization
+## Template
 
-Navigate to **Settings → Portal → Customize** to access these options:
+Start from one of three layouts:
 
-### Logo
+| Template | Look |
+|----------|------|
+| **Modern** | Clean and minimal, with cards |
+| **Classic** | Dark theme, two-column layout |
+| **Cards** | Light theme, colorful cards |
 
-Upload your company logo to display in the portal header.
+Switching templates keeps your content and colors — it changes the layout only.
 
-- **Recommended size:** 200x200px minimum
-- **Formats:** PNG, JPG, SVG
-- **Tips:** Use a square logo or one with transparent background
+## Header
 
-### Colors
+- **Logo** — .jpg or .png, plus an optional link to your own site and a size setting
+- **Title** and **Description** — the headline and subtitle at the top of your changelog
+- **Colors** — header text and background
+- **Background image** — a header backdrop (**Pro** and above)
+
+## Page and posts
 
 | Setting | Description |
 |---------|-------------|
-| **Primary color** | Used for buttons, links, and accents |
+| **Width** | How wide the content column is |
 | **Background color** | Main page background |
-| **Header background** | Portal header area |
+| **Filter sidebar** | Show or hide the category filter |
+| **Navigation labels** | Rename the Posts link, or add a link back to your site |
+| **Post content** | Show full posts in the list, or summaries only |
+| **Post styling** | Colors, border radius, shadow, and padding |
 
-<Tip>
-  Use your brand's primary color for the best recognition. Make sure there's enough contrast for readability.
-</Tip>
+## Custom CSS
 
-### Header content
-
-Customize what appears in your portal header:
-
-- **Title** — Main headline (e.g., "What's New" or "Changelog")
-- **Description** — Subtitle text explaining your changelog
-- **Show logo** — Toggle logo visibility
-- **Show subscribe button** — Let users subscribe for email updates
-
-## Advanced customization
-
-### Custom CSS
-
-For complete control, add custom CSS in **Settings → Portal → Customize → Custom CSS**.
+For anything the settings don't cover, add your own CSS under **Advanced → Custom CSS**. It's injected into your portal on every page.
 
 ```css
-/* Example: Change the post title font */
-.post-title {
-  font-family: 'Georgia', serif;
-  font-size: 28px;
-}
-
-/* Example: Add a border to category badges */
-.category-badge {
-  border: 2px solid currentColor;
-}
-
-/* Example: Customize the header */
-.portal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+/* Example: a serif font for post titles */
+#Portal h1 {
+  font-family: Georgia, serif;
 }
 ```
 
 <Warning>
-  Custom CSS can break your portal if used incorrectly. Test changes carefully.
+  The portal's markup uses utility classes that can change between releases, so target elements by tag or structure where you can, and re-check your CSS after a redesign. Custom CSS can break your portal — test changes before saving.
 </Warning>
 
-### Available CSS classes
+## Preview
 
-| Class | Element |
-|-------|---------|
-| `.portal-header` | Header container |
-| `.portal-nav` | Navigation area |
-| `.post-card` | Post list item |
-| `.post-title` | Post title |
-| `.post-content` | Post body |
-| `.category-badge` | Category tag |
-| `.author-info` | Author name and avatar |
-| `.powered-by` | Footer branding |
-
-## Preview changes
-
-Use the **Preview** button to see your changes before saving. The preview opens in a new tab showing your live portal with unsaved changes applied.
-
-## Examples
-
-<CardGroup cols={2}>
-  <Card title="Minimal">
-    Clean white background, single accent color, hidden header description
-  </Card>
-  <Card title="Bold">
-    Gradient header, large logo, vibrant category colors
-  </Card>
-  <Card title="Dark mode">
-    Dark background with light text (via custom CSS)
-  </Card>
-  <Card title="On-brand">
-    Full brand colors, custom fonts, matching your main site
-  </Card>
-</CardGroup>
-
+The Customize page shows a live preview of your portal as you edit, so you can see each change before you leave the page.

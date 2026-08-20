@@ -13,91 +13,122 @@ The `@updatespage/cli` package lets you create and publish posts from your termi
 
 ## Installation
 
-Requires **Node.js 20+**.
+Requires **Node.js 22.13+** (23.0–23.3 are not supported; 23.4+ is).
 
 ```bash
 npm install -g @updatespage/cli
 ```
 
-## Setup
-
-Create an API key in the dashboard under **Account → API Keys** (see [Authentication](/api/authentication)), then configure the CLI:
+## Signing in
 
 ```bash
-updates config --api-key YOUR_API_KEY
+updates login
 ```
 
-The CLI talks to `https://app.updates.page` by default. For a self-hosted instance, pass `--url`:
+This opens your browser and asks you to approve the CLI. On a machine without a browser — an SSH session, a container, CI — it detects that and shows a short code you enter from any other device.
+
+For unattended use, pass a token on stdin or in the environment so it never lands in your shell history:
 
 ```bash
-updates config --api-key YOUR_API_KEY --url https://updates.example.com
+updates login --token - < token.txt
+# or
+UPDATESPAGE_TOKEN=... updates list
 ```
 
-Configuration is stored at `~/.updatespage/config.json`.
+Tokens are stored in `~/.updatespage/credentials.json` with `0600` permissions. `updates logout` revokes the token on the server, not just the local copy.
+
+<Tip>
+  Keep separate accounts side by side with `--profile`: `updates login --profile work`, then `updates list --profile work`.
+</Tip>
 
 ## Commands
 
-### Publish a post
+| Command | What it does |
+|---------|--------------|
+| `updates publish [id]` | Create and publish a post, or publish an existing draft |
+| `updates draft` | Create a post without publishing it |
+| `updates update <id>` | Change fields on an existing post |
+| `updates unpublish <id>` | Revert a published or scheduled post to a draft |
+| `updates delete <id>` | Delete a post permanently |
+| `updates list` | List your posts (`--status draft\|published\|scheduled`) |
+| `updates get <id>` | Show one post in full |
+| `updates categories` | List categories (`create`, `update`, `delete` too) |
+| `updates upload <file>` | Upload an image and print its URL |
+| `updates login` / `logout` / `whoami` | Sign in, out, and check who you are |
+| `updates doctor` | Show the resolved setup and where each value came from |
+
+Run `updates <command> --help` for the details of any one.
+
+### Post fields
+
+`publish`, `draft`, and `update` share these flags:
+
+| Flag | Effect |
+|------|--------|
+| `--title <title>` | Post title |
+| `--content <html>` | Post body (HTML or plain text) |
+| `--category-id <id>` | File under a category (ids from `updates categories`) |
+| `--summary <text>` | Short summary shown in feeds and embeds |
+| `--url <url>` | Link the post to an external page instead |
+| `--private` / `--public` | Hide from / show on the public changelog |
+| `--cover-image <path>` | Set the cover from a local png/jpg/gif/webp |
 
 ```bash
 updates publish --title "New: Dark mode is here" \
   --content "<p>You can now switch to dark mode from your profile menu.</p>"
 ```
 
-Optionally assign a category:
+### Scheduling
 
 ```bash
-updates publish --title "Patched XSS vulnerability" \
-  --content "<p>We fixed a security issue reported by a customer.</p>" \
-  --category-id 4
+updates publish --title "Big launch" --content "<p>Soon</p>" --at 2026-09-01T09:00:00Z
+updates publish 1nJKvB --at 2026-09-01T09:00:00Z
 ```
 
-<Tip>
-  Run `updates categories` to find your category IDs.
-</Tip>
-
-### Create a draft
-
-Creates the post without publishing it:
-
-```bash
-updates draft --title "Upcoming: SSO" --content "<p>Draft copy...</p>"
-```
-
-### List posts
-
-```bash
-updates list
-```
-
-Filter by status:
-
-```bash
-updates list --status draft
-updates list --status published
-```
-
-### Get a post
-
-```bash
-updates get <id>
-```
-
-### List categories
-
-```bash
-updates categories
-```
+`--at` takes ISO 8601. A value without a timezone is read as local time.
 
 ## Using in CI
 
-Store your API key as a secret in your CI provider and configure the CLI in your release step:
+Store a token as a secret and read it from the environment:
 
 ```bash
-updates config --api-key "$UPDATES_PAGE_API_KEY"
+export UPDATESPAGE_TOKEN="$UPDATES_PAGE_TOKEN"
 updates publish --title "v2.4.0 released" --content "<p>See the full notes on our changelog.</p>"
 ```
 
-## Going further
+<Tip>
+  Create a dedicated **machine key** for CI in **Settings → Developer → API Keys** — it is limited to posts, categories, uploads, and imports. See [Authentication](/api/authentication).
+</Tip>
 
-The CLI covers the most common workflows. For everything else — scheduling, unpublishing, deleting, managing categories — use the [REST API](/api/authentication) directly.
+## Scripting
+
+Every command takes `--json`, which puts structured data on stdout and nothing else — progress and prompts go to stderr:
+
+```bash
+updates list --status draft --json | jq -r '.posts[].id'
+updates upload shot.png --json | jq -r .url
+```
+
+Failures exit with a code that says what went wrong:
+
+| Code | Meaning |
+|-----:|---------|
+| `0` | Success |
+| `2` | Usage — unknown flag, missing argument, bad value |
+| `3` | Configuration problem |
+| `4` | Not signed in, or the token was rejected |
+| `5` | Network failure or server error |
+| `6` | The thing you named does not exist |
+| `130` | Cancelled (Ctrl-C) |
+
+## Troubleshooting
+
+```bash
+updates doctor
+```
+
+Prints the endpoint, config file, credential store, and where each value came from — a flag, an environment variable, or a default. It exits non-zero if anything is wrong, so it doubles as a CI health check.
+
+<Note>
+  **Upgrading from 1.3?** `updates config --api-key` was removed in 1.4 — run `updates login` (or use `$UPDATESPAGE_TOKEN`) instead. Keys saved by 1.3 are not read.
+</Note>
