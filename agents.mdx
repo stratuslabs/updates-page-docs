@@ -81,9 +81,16 @@ Under `--json`, failures are JSON on stdout too:
 
 Branch on `error.code`, not on the message text.
 
-**A `403` means this account may not use the API right now** — its plan or
-trial does not cover it. Only the account owner can change that. Tell your
-user and stop; retrying will not help.
+**A `403` has two causes, and they need opposite responses.**
+
+- *The account may not use the API* — its plan or trial does not cover it.
+  Only the account owner can change that. Tell your user and stop.
+- *The key is not allowed on that endpoint* — a machine key reaches posts,
+  categories, uploads and imports and nothing else. Here the account is fine;
+  the request was not. Use an endpoint the key covers, or ask for a
+  full-access key if you genuinely need one.
+
+The message says which. Neither is worth retrying unchanged.
 
 ## Going direct
 
