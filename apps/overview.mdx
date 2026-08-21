@@ -1,0 +1,80 @@
+---
+title: Apps Overview
+description: 'Connect updates.page to the tools you already use'
+---
+
+# Apps
+
+Apps connect your changelog to other tools. Today they do one job: when someone subscribes on your portal, we add them to your email tool automatically.
+
+<Note>
+  Apps are available on the **Pro** plan and above. [Collecting subscribers](/portal/subscriptions) works on every plan.
+</Note>
+
+## Available apps
+
+<CardGroup cols={2}>
+  <Card title="Kit" icon="envelope" href="/apps/kit">
+    Add new changelog subscribers to a tag in Kit
+  </Card>
+  <Card title="Resend" icon="clock">
+    Sync subscribers into a Resend audience — **coming soon**
+  </Card>
+  <Card title="Customer.io" icon="clock">
+    Send subscribers to a Customer.io segment — **coming soon**
+  </Card>
+  <Card title="Webhook" icon="clock">
+    POST every new subscriber to a URL you control — **coming soon**
+  </Card>
+</CardGroup>
+
+## Connecting an app
+
+<Steps>
+  <Step title="Open your subscription settings">
+    Go to **Settings → Portal → Subscriptions** and find the app under **Apps**
+  </Step>
+  <Step title="Connect">
+    Click **Connect** and paste the API key from that tool. We check the key with the provider before saving it, so you find out immediately if it's wrong.
+  </Step>
+  <Step title="Choose where subscribers go">
+    Pick the list, tag, or segment new subscribers should be added to.
+  </Step>
+</Steps>
+
+That's it. New subscribers reach the connected tool within seconds of signing up.
+
+→ [Connecting Kit](/apps/kit)
+
+## How syncing works
+
+We sync a subscriber when they sign up, and again if their status changes — so someone who unsubscribes is removed from the connected list too.
+
+Syncing is one-way. Contacts you add directly in your email tool don't appear on your Subscribers page, and people who subscribed **before** you connected the app aren't sent retroactively — reconnecting the app backfills anyone added since it last synced.
+
+## When something goes wrong
+
+If your email tool rejects a sync — usually because the API key was revoked or regenerated — the app shows an error on the Subscriptions page with what went wrong, and stops trying. Reconnect with a fresh key to start it again.
+
+Your changelog is never affected by this. Subscribers are still saved to your account even when no app is connected or a connected app is failing, so you never lose sign-ups while you sort it out.
+
+## Disconnecting
+
+Open the **⋯** menu next to a connected app and choose **Disconnect**. This deletes the stored credential; it doesn't remove anyone from your list in the other tool.
+
+## Good to know
+
+<AccordionGroup>
+  <Accordion title="Where is my API key stored?">
+    Encrypted, and never sent back to your browser — the settings page shows only the last four characters so you can tell which key is in use.
+  </Accordion>
+  <Accordion title="What happens if I downgrade to Free?">
+    Syncing stops, and your connection is kept. Upgrade again and it resumes without you having to paste the key back in. Subscribers keep being collected the whole time.
+  </Accordion>
+  <Accordion title="Can I connect more than one app?">
+    Yes. Each connected app gets its own copy of every new subscriber.
+  </Accordion>
+  <Accordion title="Will there be non-email apps?">
+    That's the plan — Apps is built to cover things like posting to Slack when you publish. The list above is what exists today.
+  </Accordion>
+</AccordionGroup>

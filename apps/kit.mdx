@@ -1,0 +1,82 @@
+---
+title: Kit
+description: 'Add new changelog subscribers to a tag in Kit'
+---
+
+# Kit
+
+Connect [Kit](https://kit.com) (formerly ConvertKit) and every new changelog subscriber is added to your Kit account, optionally tagged so you can send to them as a segment.
+
+<Note>
+  Apps are available on the **Pro** plan and above.
+</Note>
+
+## Before you start
+
+You'll need a **v4 API key** from Kit. Kit's older v3 keys and API secrets won't work.
+
+<Steps>
+  <Step title="Open Kit's developer settings">
+    In Kit, go to **Settings → Advanced → API**, or visit [app.kit.com/account_settings/developer_settings](https://app.kit.com/account_settings/developer_settings)
+  </Step>
+  <Step title="Create an API key">
+    Create a key and copy it. Kit shows it once.
+  </Step>
+</Steps>
+
+<Tip>
+  If you want to tag your changelog subscribers, create the tag in Kit first so it's there to pick in the next step.
+</Tip>
+
+## Connecting
+
+<Steps>
+  <Step title="Open your subscription settings">
+    Go to **Settings → Portal → Subscriptions** and find **Kit** under **Apps**
+  </Step>
+  <Step title="Paste your API key">
+    Click **Connect** and paste the key. We check it with Kit before saving — if Kit rejects it, nothing is stored and you can try again.
+  </Step>
+  <Step title="Choose a tag">
+    We load your Kit tags and you pick one. Leave it empty to add subscribers to Kit without tagging them.
+  </Step>
+</Steps>
+
+Once connected, the app shows which tag subscribers are being added to.
+
+## What we send to Kit
+
+For each new subscriber:
+
+| Kit field | Value |
+|-----------|-------|
+| `email_address` | The address they subscribed with |
+| `first_name` | Their name, if they gave one |
+| `state` | `active` |
+
+If you picked a tag, the subscriber is added to it. If someone unsubscribes on your portal, we remove them from that tag in Kit.
+
+We don't read your Kit subscribers, create tags, or send anything on your behalf.
+
+## Changing the tag
+
+Open the **⋯** menu next to Kit and choose **Configure** to pick a different tag. Subscribers already in the old tag stay there — change that in Kit if you want them moved.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Kit rejected that API key">
+    Almost always a v3 key. Kit's v4 keys are created under **Settings → Advanced → API**; an API *secret* won't work either.
+
+    Also check you copied the whole key, with no trailing space.
+  </Accordion>
+  <Accordion title="Kit shows an error after working fine">
+    The key was regenerated or revoked in Kit. Create a new one and reconnect — your subscribers are safe on the Subscribers page in the meantime, and they'll be backfilled to Kit once you reconnect.
+  </Accordion>
+  <Accordion title="My tags aren't loading">
+    That's the same connection being tested — if we can't list your tags, we can't add subscribers either. Reconnect with a fresh key. You can still save without a tag and pick one later.
+  </Accordion>
+  <Accordion title="Subscribers from before I connected aren't in Kit">
+    Syncing starts when you connect. Reconnecting the app backfills anyone who subscribed since it last synced successfully, but people who signed up before you first connected aren't sent — export them from the Subscribers page and import them into Kit if you need them.
+  </Accordion>
+</AccordionGroup>
