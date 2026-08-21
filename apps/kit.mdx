@@ -5,7 +5,7 @@ description: 'Add new changelog subscribers to a tag in Kit'
 
 # Kit
 
-Connect [Kit](https://kit.com) (formerly ConvertKit) and every new changelog subscriber is added to your Kit account, optionally tagged so you can send to them as a segment.
+Connect [Kit](https://kit.com) (formerly ConvertKit) and every new changelog subscriber is added to your Kit account and tagged, so you can send to them as a segment.
 
 <Note>
   Apps are available on the **Pro** plan and above.
@@ -25,7 +25,7 @@ You'll need a **v4 API key** from Kit. Kit's older v3 keys and API secrets won't
 </Steps>
 
 <Tip>
-  If you want to tag your changelog subscribers, create the tag in Kit first so it's there to pick in the next step.
+  Create the tag you want changelog subscribers added to before you start, so it's there to pick in the next step.
 </Tip>
 
 ## Connecting
@@ -38,7 +38,7 @@ You'll need a **v4 API key** from Kit. Kit's older v3 keys and API secrets won't
     Click **Connect** and paste the key. We check it with Kit before saving — if Kit rejects it, nothing is stored and you can try again.
   </Step>
   <Step title="Choose a tag">
-    We load your Kit tags and you pick one. Leave it empty to add subscribers to Kit without tagging them.
+    We load your Kit tags and you pick one. This is required — the tag is what lets us remove someone from Kit if they unsubscribe later.
   </Step>
 </Steps>
 
@@ -54,17 +54,17 @@ For each new subscriber:
 | `first_name` | Their name, if they gave one |
 | `state` | `active` |
 
-If you picked a tag, the subscriber is added to it, and someone who unsubscribes on your portal is removed from that tag.
-
-<Note>
-  Without a tag, subscribers still reach Kit — but an unsubscribe has nothing to remove them from, so it won't reach Kit at all. Pick a tag if you want unsubscribes mirrored.
-</Note>
+The subscriber is added to your chosen tag, and someone who unsubscribes on your portal is removed from it again.
 
 We never unsubscribe someone from your Kit account outright, only from the tag we added them to — they may be on other lists of yours. We don't read your Kit subscribers, create tags, or send anything on your behalf.
 
 ## Changing the tag
 
 Open the **⋯** menu next to Kit and choose **Configure** to pick a different tag. Subscribers already in the old tag stay there — change that in Kit if you want them moved.
+
+<Note>
+  If Kit shows **Not syncing yet**, no tag has been chosen. Nothing is sent to Kit until you pick one, so that subscribers are never added in a way we couldn't undo if they opt out.
+</Note>
 
 ## Troubleshooting
 
@@ -78,12 +78,14 @@ Open the **⋯** menu next to Kit and choose **Configure** to pick a different t
     The key was regenerated or revoked in Kit. Create a new one and reconnect — your subscribers are safe on the Subscribers page in the meantime, and they'll be backfilled to Kit once you reconnect.
   </Accordion>
   <Accordion title="My tags aren't loading">
-    That's the same connection being tested — if we can't list your tags, we can't add subscribers either. Reconnect with a fresh key. You can still save without a tag and pick one later.
+    That's the same connection being tested — if we can't list your tags, we can't add subscribers either. Reconnect with a fresh key.
+
+    You'll need at least one tag in your Kit account to finish connecting. If the list is empty, create one in Kit and reopen **Configure**.
   </Accordion>
   <Accordion title="Someone unsubscribed but is still active in Kit">
-    Two possibilities. If you connected Kit without choosing a tag, there's nothing for us to remove them from — pick a tag and future unsubscribes will be mirrored.
+    They've been removed from the tag, but they remain a subscriber in your Kit account. That's deliberate: they may be on other lists of yours that have nothing to do with your changelog, so we never unsubscribe anyone from Kit outright.
 
-    If you did pick a tag, they've been removed from it, but they remain a subscriber in your Kit account. That's deliberate: they may be on other lists of yours that have nothing to do with your changelog, so we never unsubscribe anyone from Kit outright.
+    If you want them gone entirely, remove them in Kit.
   </Accordion>
   <Accordion title="Subscribers from before I connected aren't in Kit">
     Syncing starts when you connect. Reconnecting the app backfills anyone who subscribed since it last synced successfully, but people who signed up before you first connected aren't sent — export them from the Subscribers page and import them into Kit if you need them.
