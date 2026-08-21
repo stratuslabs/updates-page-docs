@@ -29,7 +29,8 @@
         "pages": [
           "introduction",
           "quickstart",
-          "first-post"
+          "first-post",
+          "agents"
         ]
       },
       {
@@ -108,5 +109,8 @@
       "source": "/api/announcements",
       "destination": "/api/posts"
     }
-  ]
+  ],
+  "api": {
+    "openapi": "https://app.updates.page/api/openapi.json"
+  }
 }

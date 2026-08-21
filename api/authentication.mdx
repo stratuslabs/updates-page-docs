@@ -8,7 +8,9 @@ description: 'Authenticate with the updates.page API'
 The updates.page API lets you create, publish, and manage posts programmatically.
 
 <Note>
-  API access is available on the **Pro** plan and above. Keys stop working if the account drops back to Free.
+  API access is included for the first **14 days** of a new account, and
+  continues on the **Pro** plan and above. Keys stop working when neither
+  applies — whichever way the key was created.
 </Note>
 
 ## Base URL
@@ -44,6 +46,13 @@ All endpoints accept and return JSON.
 Keys created for CI, scripts, and agents are **machine keys** by default. A machine key can reach the content API — posts, categories, uploads, and imports — and nothing else. It can't touch account settings, billing, the team, or mint further API keys, so a leaked CI token stays contained.
 
 Turn the toggle off if you need a key with full account access.
+
+### Scopes
+
+There are none. Every token carries the full API access of the person who
+created or approved it — including one minted by signing the CLI in. Treat a
+token as you would that person's password, and reach for a machine key when
+you want a smaller blast radius.
 
 ### Expiry
 
@@ -94,3 +103,20 @@ API requests are limited to **300 requests per 5 minutes** per IP.
     Manage the categories used to organize posts
   </Card>
 </CardGroup>
+
+## Machine-readable
+
+Every endpoint, request and response is described in an OpenAPI 3.1
+specification:
+
+```
+https://app.updates.page/api/openapi.json
+```
+
+The OAuth endpoints describe themselves too, at
+`https://app.updates.page/.well-known/oauth-authorization-server`
+(RFC 8414), so a client can configure itself from the issuer rather than
+hard-coding URLs.
+
+If you are pointing an agent at this API, start with
+[Using updates.page from an agent](/agents).
