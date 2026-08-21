@@ -54,9 +54,13 @@ For each new subscriber:
 | `first_name` | Their name, if they gave one |
 | `state` | `active` |
 
-If you picked a tag, the subscriber is added to it. If someone unsubscribes on your portal, we remove them from that tag in Kit.
+If you picked a tag, the subscriber is added to it, and someone who unsubscribes on your portal is removed from that tag.
 
-We don't read your Kit subscribers, create tags, or send anything on your behalf.
+<Note>
+  Without a tag, subscribers still reach Kit — but an unsubscribe has nothing to remove them from, so it won't reach Kit at all. Pick a tag if you want unsubscribes mirrored.
+</Note>
+
+We never unsubscribe someone from your Kit account outright, only from the tag we added them to — they may be on other lists of yours. We don't read your Kit subscribers, create tags, or send anything on your behalf.
 
 ## Changing the tag
 
@@ -75,6 +79,11 @@ Open the **⋯** menu next to Kit and choose **Configure** to pick a different t
   </Accordion>
   <Accordion title="My tags aren't loading">
     That's the same connection being tested — if we can't list your tags, we can't add subscribers either. Reconnect with a fresh key. You can still save without a tag and pick one later.
+  </Accordion>
+  <Accordion title="Someone unsubscribed but is still active in Kit">
+    Two possibilities. If you connected Kit without choosing a tag, there's nothing for us to remove them from — pick a tag and future unsubscribes will be mirrored.
+
+    If you did pick a tag, they've been removed from it, but they remain a subscriber in your Kit account. That's deliberate: they may be on other lists of yours that have nothing to do with your changelog, so we never unsubscribe anyone from Kit outright.
   </Accordion>
   <Accordion title="Subscribers from before I connected aren't in Kit">
     Syncing starts when you connect. Reconnecting the app backfills anyone who subscribed since it last synced successfully, but people who signed up before you first connected aren't sent — export them from the Subscribers page and import them into Kit if you need them.
