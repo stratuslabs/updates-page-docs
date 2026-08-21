@@ -24,13 +24,17 @@ Returns an array of categories:
 
 ```json
 [
-  { "id": 1, "name": "New", "color": "#10B981" },
+  { "id": 1, "name": "New", "color": "#22C55E" },
   { "id": 2, "name": "Improvement", "color": "#3B82F6" },
-  { "id": 3, "name": "Fix", "color": "#F59E0B" }
+  { "id": 3, "name": "Fix", "color": "#EF4444" }
 ]
 ```
 
 Use the `id` values as `category_id` when [creating posts](/api/posts#create-a-post).
+
+<Note>
+  Free accounts are limited to **3 categories** — the three created with your account. Creating more requires Pro.
+</Note>
 
 ## Create a category
 
@@ -42,7 +46,7 @@ POST /api/v1/categories
 curl -X POST https://app.updates.page/api/v1/categories \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Security", "color": "#EF4444"}'
+  -d '{"category": {"name": "Security", "color": "#EF4444"}}'
 ```
 
 ## Update a category
@@ -55,7 +59,7 @@ PATCH /api/v1/categories/:id
 curl -X PATCH https://app.updates.page/api/v1/categories/4 \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"name": "Security & Privacy"}'
+  -d '{"category": {"name": "Security & Privacy"}}'
 ```
 
 ## Delete a category

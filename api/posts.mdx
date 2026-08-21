@@ -9,6 +9,10 @@ Manage posts programmatically. All endpoints require [authentication](/api/authe
 
 Base URL: `https://app.updates.page`
 
+<Note>
+  Post IDs are short strings like `1nJKvB`, not numbers. Use the `id` from a list or create response wherever an endpoint takes `:id`.
+</Note>
+
 ## List posts
 
 ```
@@ -27,7 +31,7 @@ Returns an array of posts:
 ```json
 [
   {
-    "id": 42,
+    "id": "1nJKvB",
     "title": "New: Dark mode is here",
     "created_at": "2026-07-01T09:15:00Z",
     "updated_at": "2026-07-02T14:30:00Z",
@@ -35,7 +39,7 @@ Returns an array of posts:
     "category_id": 3,
     "is_public": true,
     "status": "published",
-    "portal_url": "https://yourcompany.updates.page/changelog/new-dark-mode-is-here"
+    "portal_url": "https://yourcompany.updates.page/changelog/1nJKvB-new-dark-mode-is-here"
   }
 ]
 ```
@@ -49,19 +53,19 @@ GET /api/v1/posts/:id
 Returns the full post, including its content, summary, category, and cover image.
 
 ```bash
-curl https://app.updates.page/api/v1/posts/42 \
+curl https://app.updates.page/api/v1/posts/1nJKvB \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ```json
 {
-  "id": 42,
+  "id": "1nJKvB",
   "title": "New: Dark mode is here",
   "content": "<p>You can now switch to dark mode from your profile menu.</p>",
   "summary": "You can now switch to dark mode from your profile menu.",
   "category": {
     "name": "New",
-    "color": "#10B981"
+    "color": "#22C55E"
   },
   "cover_image": "https://...",
   "created_at": "2026-07-01T09:15:00Z",
@@ -69,7 +73,7 @@ curl https://app.updates.page/api/v1/posts/42 \
   "published_at": "2026-07-02T14:30:00Z",
   "is_public": true,
   "status": "published",
-  "portal_url": "https://yourcompany.updates.page/changelog/new-dark-mode-is-here"
+  "portal_url": "https://yourcompany.updates.page/changelog/1nJKvB-new-dark-mode-is-here"
 }
 ```
 
@@ -105,14 +109,14 @@ POST /api/v1/posts/:id/publish
 Publishes a post immediately:
 
 ```bash
-curl -X POST https://app.updates.page/api/v1/posts/42/publish \
+curl -X POST https://app.updates.page/api/v1/posts/1nJKvB/publish \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 To schedule it instead, pass an ISO 8601 `published_at` in the body:
 
 ```bash
-curl -X POST https://app.updates.page/api/v1/posts/42/publish \
+curl -X POST https://app.updates.page/api/v1/posts/1nJKvB/publish \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"published_at": "2026-08-01T09:00:00Z"}'
@@ -127,8 +131,43 @@ POST /api/v1/posts/:id/unpublish
 Reverts a published post to a draft:
 
 ```bash
-curl -X POST https://app.updates.page/api/v1/posts/42/unpublish \
+curl -X POST https://app.updates.page/api/v1/posts/1nJKvB/unpublish \
   -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+## Update a post
+
+```
+PATCH /api/v1/posts/:id
+```
+
+Send only the fields you want to change:
+
+```bash
+curl -X PATCH https://app.updates.page/api/v1/posts/1nJKvB \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"post": {"summary": "Dark mode, finally.", "category_id": 4}}'
+```
+
+Accepted fields: `title`, `content`, `summary`, `category_id`, `author_id`, `is_public`, `override_url`, `published_at`.
+
+## Upload an image
+
+```
+POST /api/v1/uploads
+```
+
+Upload an image and get back a URL you can drop into a post's HTML `content`:
+
+```bash
+curl -X POST https://app.updates.page/api/v1/uploads \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "file=@screenshot.png"
+```
+
+```json
+{ "id": 91, "url": "https://..." }
 ```
 
 ## Delete a post
@@ -138,7 +177,7 @@ DELETE /api/v1/posts/:id
 ```
 
 ```bash
-curl -X DELETE https://app.updates.page/api/v1/posts/42 \
+curl -X DELETE https://app.updates.page/api/v1/posts/1nJKvB \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 

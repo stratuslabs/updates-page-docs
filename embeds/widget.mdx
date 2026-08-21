@@ -1,6 +1,6 @@
 ---
 title: Installing an Embed
-description: 'Add the posts panel to your app with one script tag'
+description: 'Add the What’s New panel to your app with one script tag'
 ---
 
 # Installing an Embed
@@ -15,7 +15,7 @@ The embed adds a trigger button to your app that opens a slide-over panel with y
 
 ### 1. Create an embed
 
-1. In the dashboard, go to **Account → Embeds**
+1. In the dashboard, go to **Settings → Developer → Embeds**
 2. Click **New Embed**
 3. Configure it in the embed editor (theme, placement, colors, button label, heading text)
 4. Save
@@ -43,7 +43,7 @@ Paste the script tag before the closing `</body>` tag on every page where you wa
   <body>
     <!-- Your app content -->
 
-    <!-- updates.page embed (copy your exact tag from Account → Embeds) -->
+    <!-- updates.page embed (copy your exact tag from Settings → Developer → Embeds) -->
     <script type="text/javascript" src="https://.../<embed-id>.js"></script>
   </body>
 </html>
@@ -84,7 +84,7 @@ The embed is a plain script tag, so it works with any framework. Inject it once 
       useEffect(() => {
         const script = document.createElement('script')
         script.type = 'text/javascript'
-        // Use the exact URL from your dashboard (Account → Embeds)
+        // Use the exact URL from your dashboard (Settings → Developer → Embeds)
         script.src = 'https://.../<embed-id>.js'
         document.body.appendChild(script)
 
@@ -105,7 +105,7 @@ The embed is a plain script tag, so it works with any framework. Inject it once 
       return (
         <>
           {children}
-          {/* Use the exact URL from your dashboard (Account → Embeds) */}
+          {/* Use the exact URL from your dashboard (Settings → Developer → Embeds) */}
           <Script src="https://.../<embed-id>.js" strategy="lazyOnload" />
         </>
       )
@@ -123,7 +123,7 @@ The embed is a plain script tag, so it works with any framework. Inject it once 
       mounted() {
         const script = document.createElement('script')
         script.type = 'text/javascript'
-        // Use the exact URL from your dashboard (Account → Embeds)
+        // Use the exact URL from your dashboard (Settings → Developer → Embeds)
         script.src = 'https://.../<embed-id>.js'
         document.body.appendChild(script)
       }

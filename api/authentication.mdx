@@ -8,7 +8,7 @@ description: 'Authenticate with the updates.page API'
 The updates.page API lets you create, publish, and manage posts programmatically.
 
 <Note>
-  API access is available on the **Pro** plan and above.
+  API access is available on the **Pro** plan and above. Keys stop working if the account drops back to Free.
 </Note>
 
 ## Base URL
@@ -25,19 +25,31 @@ All endpoints accept and return JSON.
 
 <Steps>
   <Step title="Go to API Keys">
-    In the dashboard, navigate to **Account → API Keys**
+    In the dashboard, navigate to **Settings → Developer → API Keys**
   </Step>
   <Step title="Create a key">
-    Click to create a new API key and give it a descriptive name
+    Give it a descriptive name, and optionally an expiry
   </Step>
   <Step title="Copy the key">
-    Copy the key and store it somewhere safe
+    The token is shown once, at creation. Store it somewhere safe
   </Step>
 </Steps>
 
 <Warning>
   Treat API keys like passwords. Don't commit them to source control or expose them in client-side code.
 </Warning>
+
+### Machine keys
+
+Keys created for CI, scripts, and agents are **machine keys** by default. A machine key can reach the content API — posts, categories, uploads, and imports — and nothing else. It can't touch account settings, billing, the team, or mint further API keys, so a leaked CI token stays contained.
+
+Turn the toggle off if you need a key with full account access.
+
+### Expiry
+
+A key can be given a lifetime of up to **one year**, or left with no expiry.
+
+Separately, **a key that goes unused for 90 days stops working.** If a rarely-run job starts returning `401`, create a fresh key.
 
 ## Using your API key
 
@@ -47,6 +59,30 @@ Send your key in the `Authorization` header as a Bearer token:
 curl https://app.updates.page/api/v1/posts \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
+
+<Tip>
+  Prefer not to manage keys by hand? The [CLI](/cli/overview) signs in through your browser and stores its own token.
+</Tip>
+
+## Errors
+
+Failures return a JSON body with an `error` (or `errors`) field:
+
+```json
+{ "error": "Invalid or expired API key" }
+```
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Missing, revoked, expired, or stale key |
+| `403` | Plan doesn't include API access, or the key isn't allowed here |
+| `404` | No such record on your account |
+| `422` | Validation failed — check the `errors` object |
+| `429` | Rate limited |
+
+## Rate limits
+
+API requests are limited to **300 requests per 5 minutes** per IP.
 
 ## Endpoints
 

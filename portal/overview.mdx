@@ -38,14 +38,12 @@ You can also [set up a custom domain](/portal/custom-domain) like `changelog.you
 
 Configure your portal in **Settings → Portal**:
 
-| Setting | Description |
-|---------|-------------|
-| **Logo** | Your company logo (displayed in header) |
-| **Favicon** | Browser tab icon |
-| **Colors** | Primary and background colors |
-| **Title** | Custom page title (for SEO) |
-| **Description** | Meta description (for SEO) |
-| **Custom CSS** | Advanced styling overrides |
+| Page | What it controls |
+|------|------------------|
+| **Domain Name** | Your custom domain |
+| **Analytics & SEO** | Meta title and description, no-index, Google Analytics, Fathom |
+| **Subscriptions** | Whether the RSS button shows on your portal |
+| **Customize** | Template, logo, colors, layout, header text, custom CSS |
 
 ## What users see
 
@@ -62,10 +60,14 @@ Your portal displays:
 Your portal automatically includes an RSS feed at:
 
 ```
-https://yourcompany.updates.page/changelog/rss
+https://yourcompany.updates.page/rss
 ```
 
-Users can subscribe to get notified of new posts in their RSS reader.
+Users can subscribe to get notified of new posts in their RSS reader. An RSS button shows on your portal by default — toggle it in **Settings → Portal → Subscriptions**.
+
+<Note>
+  The old `/changelog/rss` address still redirects, so feeds people already subscribed to keep working.
+</Note>
 
 <Tip>
   Link to your RSS feed from your main website or app to help users stay updated.
