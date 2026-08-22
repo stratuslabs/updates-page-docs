@@ -1,0 +1,93 @@
+---
+title: Email Subscriptions
+description: 'Let readers subscribe to your changelog by email'
+---
+
+# Email Subscriptions
+
+Readers can subscribe to your changelog with their email address. Subscribers are saved to your account, and you can push them to your email tool automatically with an [app](/apps/overview).
+
+<Note>
+  Collecting subscribers works on every plan. Connecting an app to sync them onward is available on the **Pro** plan and above.
+</Note>
+
+## Turning on the form
+
+<Steps>
+  <Step title="Open your subscription settings">
+    Go to **Settings → Portal → Subscriptions**
+  </Step>
+  <Step title="Enable the form">
+    Switch on **Show subscription form on changelog**
+  </Step>
+  <Step title="Check your portal">
+    A **Subscribe** button appears next to your portal's title. Clicking it opens a small form asking for an email address.
+  </Step>
+</Steps>
+
+Once someone subscribes, the button changes to **Subscribed** for them, so they aren't asked twice.
+
+The same page has a **Show RSS subscription feed** toggle for the RSS button. The two are independent — you can offer either, both, or neither.
+
+## Who we email
+
+Nobody, for now. updates.page stores your subscribers and hands them to your email tool; it doesn't send the announcement emails itself.
+
+That means the sequence is:
+
+1. A reader subscribes on your portal.
+2. We save them to your account.
+3. If you've connected an app, we add them to your list there within seconds.
+4. You send the broadcast from your email tool, when you're ready.
+
+<Note>
+  Sending changelog emails directly from updates.page is on the roadmap. Until then, connect an app so your list is ready to go.
+</Note>
+
+## Managing subscribers
+
+**Settings → Portal → Subscribers** lists everyone who has signed up, newest first, with a search box for finding a specific address.
+
+Each subscriber shows:
+
+| Field | Meaning |
+|-------|---------|
+| **Email** | The address they gave |
+| **Status** | `subscribed`, `unsubscribed`, or `bounced` |
+| **Source** | Where they signed up — `portal` today |
+| **Date** | When they subscribed |
+
+**Export** downloads the whole list as a CSV — email, name, status, source, and dates. It's the same list whatever your plan, and it's how you move subscribers into an email tool you connected after they signed up (see [Apps](/apps/overview)).
+
+Deleting a subscriber removes them from your account permanently, and removes them from the list or tag a [connected app](/apps/overview) added them to. It doesn't unsubscribe them from your email tool altogether — they may be on other lists of yours — so do that in the tool itself if you want them gone entirely.
+
+<Tip>
+  Your subscriber count also shows on the **Reports** page, alongside views and posts.
+</Tip>
+
+## Good to know
+
+<AccordionGroup>
+  <Accordion title="Do subscribers have to confirm their address?">
+    Not with updates.page. We save the address as soon as it's submitted.
+
+    Some email tools run their own confirmation step when a contact is added, in which case your reader will get a confirmation email from that tool rather than from us.
+  </Accordion>
+  <Accordion title="What stops spam sign-ups?">
+    The form carries a hidden field that automated scripts fill in and people don't, and there's a rate limit on how many sign-ups one visitor can submit. Addresses that aren't valid email addresses are rejected.
+
+    If junk does get through, delete it from the Subscribers page.
+  </Accordion>
+  <Accordion title="What happens if someone subscribes twice?">
+    Nothing — the second attempt is accepted and quietly ignored. You'll never get duplicate rows for the same address, and casing doesn't matter: `Reader@Example.com` and `reader@example.com` are the same person.
+  </Accordion>
+  <Accordion title="Can I subscribe from my own preview?">
+    No. The **Customize** page renders a live preview of your portal, and subscribing from it is blocked so you don't add yourself by accident. Use your real portal address to test it.
+  </Accordion>
+  <Accordion title="What happens to subscribers if I turn the form off?">
+    They stay. Turning the toggle off hides the form and stops accepting new sign-ups; the people who already subscribed remain on your Subscribers page and keep syncing to a connected app if their status changes.
+  </Accordion>
+  <Accordion title="Does the RSS feed still work?">
+    Yes, and it's independent of this. See [Portal Overview](/portal/overview) for your feed address.
+  </Accordion>
+</AccordionGroup>
