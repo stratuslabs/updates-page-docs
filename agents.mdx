@@ -12,14 +12,32 @@ reading this: you can do the whole loop from a shell.
 
 ```bash
 npm install -g @updatespage/cli
-updates login                      # prints a URL and a code for your human
+updates login --device             # prints a URL and a code for your human
 updates categories --json          # find the category to file under
-updates draft --title "…" --content "<p>…</p>" --category-id 4 --json
+
+content=$(cat <<'HTML'
+<p>Switch to dark mode from your profile menu.</p>
+HTML
+)
+updates draft --title "Dark mode" --content "$content" --category-id 4 --json
 ```
 
 Every command takes `--json` and puts structured data on stdout, nothing
 else. Everything else — progress, prompts, warnings — goes to stderr. See the
 [CLI reference](/cli/overview) for the full command list.
+
+<Warning>
+  **Do not interpolate post text into a double-quoted argument.** Release
+  notes contain inline code, and inside double quotes the shell expands
+  backticks, `$VAR` and `$(...)` before the CLI ever sees them — so a body
+  mentioning a command in backticks runs that command and publishes its
+  output.
+
+  A quoted heredoc expands nothing, and `"$content"` passes the result as a
+  single argument, which is why the example above is written that way. This
+  matters most for text taken from commit messages or a diff, which you did
+  not write.
+</Warning>
 
 ## Draft before you publish
 
