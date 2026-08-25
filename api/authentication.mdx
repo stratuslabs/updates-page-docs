@@ -8,14 +8,19 @@ description: 'Authenticate with the updates.page API'
 The updates.page API lets you create, publish, and manage posts programmatically.
 
 <Note>
-  API access is available on the **Pro** plan and above, and for the first
-  **14 days** of any new account on the Free plan — so you can publish from a
-  script, CI or an agent before you pick a plan.
+  An account has API access while **either** of these is true:
 
-  The trial starts when the account is created and isn't extended. When it
-  ends, a Free account's keys stop working: existing keys aren't deleted, and
-  they start working again as soon as the account upgrades. Keys also stop
-  working if a paid account drops back to Free.
+  - it's on the **Pro** plan or above, or
+  - it's less than **14 days old** — the trial, so you can publish from a
+    script, CI or an agent before you pick a plan.
+
+  This is checked on every request, so the two overlap rather than replacing
+  each other: an account that upgrades and then returns to Free still has
+  access for the rest of its first 14 days. The trial runs from when the
+  account was created and isn't extended or restarted.
+
+  When neither applies, keys answer `403` — they aren't deleted, and they
+  start working again the moment the account is back on a paid plan.
 </Note>
 
 ## Base URL
