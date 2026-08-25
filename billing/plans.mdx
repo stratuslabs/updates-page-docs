@@ -5,64 +5,151 @@ description: 'Choose the right plan for your team'
 
 # Plans & Pricing
 
-updates.page offers simple, transparent pricing.
+updates.page offers simple, transparent pricing. Every plan includes unlimited
+posts and unlimited readers — we never charge by pageview.
 
 ## Plans
 
 <CardGroup cols={3}>
   <Card title="Free" icon="gift">
     **$0/month**
-    
+
+    For side projects and trying things out.
+
+    - Hosted changelog on your subdomain (company.updates.page)
     - Unlimited posts
-    - 1 team member
-    - Subdomain (company.updates.page)
     - 3 categories
-    - Custom CSS
-    - Built-in analytics
+    - Scheduled publishing
+    - Cover images
+    - RSS feed
+    - Email subscribers
+    - Templates & custom CSS
+    - Basic analytics
+    - 1 team seat
     - API & CLI for your first 14 days
   </Card>
   <Card title="Pro" icon="star">
-    **$29/month** (or $290/year)
-    
+    **$29/month** — or **$290/year** (two months free)
+
+    For growing products.
+
     - Everything in Free
-    - Custom domain
+    - Custom domain + SSL
     - Unlimited categories
     - API & CLI access
-    - Embeds
+    - Embeddable widget
+    - Apps & integrations (Kit and more)
+    - Portal background image
+    - Advanced analytics
     - Google Analytics & Fathom
+    - 1 team seat
     - Email support
   </Card>
   <Card title="Business" icon="building">
-    **$99/month** (or $990/year)
-    
+    **$99/month** — or **$990/year** (two months free)
+
+    For teams that need seats and automation.
+
     - Everything in Pro
-    - 10 team members
-    - AI writing
+    - 10 team seats
     - Remove "Powered by" branding
+    - AI writing assistant
+    - Free concierge migration
+    - Slack support
     - Priority support
   </Card>
 </CardGroup>
 
 ## Feature comparison
 
+### Portal & customization
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| Changelog portal | ✓ | ✓ | ✓ |
+| Custom subdomain | ✓ | ✓ | ✓ |
+| Templates | 4 | 4 | 4 |
+| Custom CSS | ✓ | ✓ | ✓ |
+| Custom domain + SSL | - | ✓ | ✓ |
+| Portal background image | - | ✓ | ✓ |
+| Remove "Powered by" branding | - | - | ✓ |
+
+### Content & publishing
+
 | Feature | Free | Pro | Business |
 |---------|------|-----|----------|
 | Posts | Unlimited | Unlimited | Unlimited |
-| Team seats | 1 | 1 | 10 |
-| Custom subdomain | ✓ | ✓ | ✓ |
 | Categories | 3 | Unlimited | Unlimited |
+| Scheduled publishing | ✓ | ✓ | ✓ |
+| Cover images | ✓ | ✓ | ✓ |
 | RSS feed | ✓ | ✓ | ✓ |
-| Built-in analytics | ✓ | ✓ | ✓ |
-| Custom domain | - | ✓ | ✓ |
-| Portal background image | - | ✓ | ✓ |
-| Custom CSS | ✓ | ✓ | ✓ |
-| Google Analytics & Fathom | - | ✓ | ✓ |
-| Remove branding | - | - | ✓ |
-| API access | 14-day trial | ✓ | ✓ |
-| CLI | 14-day trial | ✓ | ✓ |
-| Embeds | - | ✓ | ✓ |
-| AI writing | - | - | ✓ |
+| RSS import | ✓ | ✓ | ✓ |
+| Concierge migration | - | - | ✓ |
+
+### Embeds & integrations
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| Embeddable widget | - | ✓ | ✓ |
+| API access | 14 days | ✓ | ✓ |
+| CLI tool | 14 days | ✓ | ✓ |
+| Apps & integrations | - | ✓ | ✓ |
+
+<Note>
+  Every new account gets **14 days of API and CLI access on the Free plan**, so
+  you can publish from your terminal, CI or an agent before you pick a plan.
+  After that, API access needs Pro or Business. See
+  [Authentication](/api/authentication).
+</Note>
+
+### Subscribers
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| Email subscribers | ✓ | ✓ | ✓ |
+| Subscriber CSV export | ✓ | ✓ | ✓ |
+| Sync to your email tool (Kit and more) | - | ✓ | ✓ |
+
+Collecting subscribers is free on every plan and the list is always yours.
+Connecting an app so new subscribers flow into your own email tool is a Pro
+feature — see [Apps](/apps/overview).
+
+### Analytics & SEO
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| Basic analytics | ✓ | ✓ | ✓ |
+| Advanced analytics | - | ✓ | ✓ |
+| SEO meta tags | ✓ | ✓ | ✓ |
+| Google Analytics | - | ✓ | ✓ |
+| Fathom Analytics | - | ✓ | ✓ |
+
+### Team
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| Team seats | 1 | 1 | 10 |
+
+<Note>
+  Pro includes **one seat**, the same as Free — Business is the plan that adds
+  teammates. If a plan change leaves your team over its seat limit, existing
+  members keep working; you just can't invite anyone new until you're back
+  under it.
+</Note>
+
+### AI
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| AI writing assistant | - | - | ✓ |
+
+### Support
+
+| Feature | Free | Pro | Business |
+|---------|------|-----|----------|
+| Community support | ✓ | ✓ | ✓ |
 | Email support | - | ✓ | ✓ |
+| Slack support | - | - | ✓ |
 | Priority support | - | - | ✓ |
 
 ## Upgrading
@@ -72,7 +159,7 @@ updates.page offers simple, transparent pricing.
     Navigate to **Settings → Team → Billing**
   </Step>
   <Step title="Choose a plan">
-    Click **Upgrade** on the plan you want
+    Click **Upgrade**, pick monthly or annual, then **Select plan**
   </Step>
   <Step title="Enter payment details">
     Add your credit card information
@@ -95,10 +182,12 @@ Payments are processed securely through Stripe.
 ## Billing cycle
 
 - Plans are billed monthly or annually (annual is two months free)
-- Upgrades take effect immediately
+- Upgrades take effect immediately, and changes are prorated automatically
 - Downgrades take effect at the end of the billing period
 - No contracts — cancel anytime
+- 14-day money-back guarantee, within 14 days of your first payment on a paid plan
 
-## Need more?
+## Enterprise
 
-For teams larger than 10 or custom requirements, [contact us](mailto:support@updates.page) for a custom plan.
+Need SSO/SAML, audit logs, an SLA, invoicing, or more than 10 seats?
+[Contact us](mailto:hey@updates.page) and we'll put together a custom plan.

@@ -50,7 +50,8 @@
           "portal/custom-domain",
           "portal/customization",
           "portal/seo",
-          "portal/analytics"
+          "portal/analytics",
+          "portal/subscriptions"
         ]
       },
       {
@@ -60,6 +61,13 @@
           "embeds/widget",
           "embeds/inline",
           "embeds/styling"
+        ]
+      },
+      {
+        "group": "Apps",
+        "pages": [
+          "apps/overview",
+          "apps/kit"
         ]
       },
       {
