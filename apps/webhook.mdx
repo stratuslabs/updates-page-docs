@@ -1,0 +1,176 @@
+---
+title: Webhook
+description: 'POST every new subscriber to a URL you control'
+---
+
+# Webhook
+
+Point us at an endpoint of your own and we'll POST a signed JSON payload every time someone subscribes to your changelog, unsubscribes, or is deleted. Use it to write subscribers into a database, a CRM, or an email tool we don't have an app for yet.
+
+<Note>
+  Apps are available on the **Pro** plan and above. [Collecting subscribers](/portal/subscriptions) works on every plan.
+</Note>
+
+## Before you start
+
+You'll need an endpoint that:
+
+- is served over **https** — we won't POST subscriber addresses over plain http
+- answers **2xx** quickly (we wait 10 seconds for a response)
+- is reachable from the public internet, on a public IP address
+- accepts our **test event before you have the signing secret** — see below
+
+<Warning>
+  We send a test event the moment you connect, and the connection only succeeds if it comes back 2xx. You're given the signing secret *after* that, so an endpoint that rejects unsigned requests from the very start can't be connected. Accept the first request, then start verifying.
+</Warning>
+
+## Connecting
+
+<Steps>
+  <Step title="Open your subscription settings">
+    Go to **Settings → Portal → Subscriptions** and find **Webhook** under **Apps**
+  </Step>
+  <Step title="Paste your endpoint URL">
+    Click **Connect** and enter the https URL we should POST to. We send a `ping` event straight away — if your endpoint doesn't answer 2xx, nothing is stored and you can try again.
+  </Step>
+  <Step title="Copy your signing secret">
+    We show it once. Store it somewhere your endpoint can read it.
+  </Step>
+</Steps>
+
+## What we send
+
+Every delivery is a `POST` with a JSON body:
+
+```json
+{
+  "id": "0f1c4a9e-3c1e-4f6a-9c4a-2f0c8b6d1a77",
+  "event": "subscriber.created",
+  "sent_at": "2026-08-25T10:14:03Z",
+  "data": {
+    "id": "wJ8kQz",
+    "email": "reader@example.com",
+    "name": "Sam Reader",
+    "status": "subscribed",
+    "source": "portal",
+    "subscribed_at": "2026-08-25T10:14:03Z",
+    "unsubscribed_at": null,
+    "created_at": "2026-08-25T10:14:03Z"
+  }
+}
+```
+
+And these headers:
+
+| Header | Value |
+|--------|-------|
+| `X-UpdatesPage-Event` | The event name, also in the body |
+| `X-UpdatesPage-Delivery` | A unique id for this delivery — the same value as `id` in the body |
+| `X-UpdatesPage-Timestamp` | Unix seconds, part of what's signed |
+| `X-UpdatesPage-Signature` | `sha256=` followed by the HMAC — see below |
+
+### Events
+
+| Event | When |
+|-------|------|
+| `ping` | You connect the app. `data` carries a message, nothing else |
+| `subscriber.created` | Someone subscribes from your changelog |
+| `subscriber.updated` | Their status changes — an unsubscribe, or a re-subscribe |
+| `subscriber.deleted` | You delete them on the Subscribers page. `data` carries the email and `"status": "deleted"` — there's no record left to send |
+
+<Warning>
+  **Act on `data.status`, not on the event name.** Deliveries aren't ordered, so someone who subscribes and immediately unsubscribes can reach you either way round. Every payload carries the subscriber as they read at the moment we sent it, so applying `data.status` always converges on the truth — trusting the event name can resurrect someone who has already left.
+</Warning>
+
+## Verifying the signature
+
+`X-UpdatesPage-Signature` is `sha256=` plus an HMAC-SHA256, keyed with your signing secret, over the timestamp and the raw body joined by a dot:
+
+```
+sha256=HMAC_SHA256(secret, "<X-UpdatesPage-Timestamp>.<raw request body>")
+```
+
+Sign the **raw body** as received, before any JSON parsing — re-serializing changes the bytes and the signature won't match.
+
+<CodeGroup>
+
+```ruby Ruby
+require "openssl"
+
+def verify(request, secret)
+  timestamp = request.headers["X-UpdatesPage-Timestamp"]
+  signature = request.headers["X-UpdatesPage-Signature"].to_s
+  expected  = "sha256=" + OpenSSL::HMAC.hexdigest("SHA256", secret, "#{timestamp}.#{request.raw_post}")
+
+  # Constant-time compare, and refuse anything older than five minutes.
+  return false unless OpenSSL.secure_compare(signature, expected)
+
+  (Time.now.to_i - timestamp.to_i).abs < 300
+end
+```
+
+```javascript Node
+import crypto from "node:crypto"
+
+function verify(headers, rawBody, secret) {
+  const timestamp = headers["x-updatespage-timestamp"]
+  const signature = headers["x-updatespage-signature"] || ""
+  const expected =
+    "sha256=" +
+    crypto.createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex")
+
+  if (signature.length !== expected.length) return false
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return false
+
+  return Math.abs(Date.now() / 1000 - Number(timestamp)) < 300
+}
+```
+
+</CodeGroup>
+
+The timestamp is inside the signature so an old delivery can't be replayed at you — reject anything more than a few minutes old.
+
+## How we handle your responses
+
+| Response | What happens |
+|----------|--------------|
+| **2xx** | Delivered |
+| **3xx** | Refused, not followed. Give us the final URL — only the first address is security-checked, so following a redirect would be a way around that |
+| **404**, other 4xx | Recorded and shown on the Subscriptions page. The app keeps working, so a deploy that briefly takes the route away doesn't cost you the integration |
+| **401**, **403** | We stop and ask you to reconnect — this looks like your endpoint rejecting our signature |
+| **410 Gone** | We stop. You've told us the endpoint is permanently gone |
+| **429** | Retried with backoff |
+| **5xx**, timeout, connection error | Retried with backoff, then recorded |
+
+Subscribers are always saved to your account first, so nothing is lost while an endpoint is down.
+
+## Changing the URL or the secret
+
+Open the **⋯** menu next to Webhook and choose **Reconnect**. The URL you stored isn't shown back to you — it's kept encrypted like any other credential — so reconnecting means entering it again.
+
+<Note>
+  **Reconnecting issues a new signing secret and retires the old one.** That's also how you rotate: there's no separate rotate button, and the secret can't be looked up after the one time we show it.
+</Note>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connecting failed and I never got a secret">
+    Nothing is stored when the test event doesn't come back 2xx, including the secret — the next attempt mints a new one. Check that your endpoint is live, public, and answering 2xx to a POST with a JSON body, and that it isn't rejecting the request for being unsigned.
+  </Accordion>
+  <Accordion title="Webhook URLs must start with https://">
+    We only POST subscriber addresses over https. A local tunnel (ngrok, Cloudflare Tunnel) gives you an https URL for testing.
+  </Accordion>
+  <Accordion title="That webhook URL now resolves to a private address">
+    The host resolves to a private, loopback, or otherwise non-public address. We refuse those, at connect time and on every delivery — a URL we POST to is our server reaching out on your behalf, and internal addresses aren't ours to reach. `localhost` and `127.0.0.1` won't work; use a tunnel.
+  </Accordion>
+  <Accordion title="Signatures don't match">
+    Almost always the body. Sign the raw bytes as received, not a re-serialized copy of the parsed JSON — key order and whitespace both change the result. Check too that the timestamp header is part of what you sign, joined to the body with a dot.
+  </Accordion>
+  <Accordion title="I got the same event twice">
+    Retries can redeliver an event we already sent. `X-UpdatesPage-Delivery` is unique per delivery, so store it and ignore ids you've already handled — and applying `data.status` makes a repeat harmless anyway.
+  </Accordion>
+  <Accordion title="Subscribers from before I connected weren't sent">
+    Syncing starts when you connect. Export the earlier ones from the Subscribers page.
+  </Accordion>
+</AccordionGroup>

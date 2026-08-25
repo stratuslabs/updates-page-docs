@@ -23,8 +23,8 @@ Apps connect your changelog to other tools. Today they do one job: when someone 
   <Card title="Customer.io" icon="clock">
     Send subscribers to a Customer.io segment — **coming soon**
   </Card>
-  <Card title="Webhook" icon="clock">
-    POST every new subscriber to a URL you control — **coming soon**
+  <Card title="Webhook" icon="code" href="/apps/webhook">
+    POST every new subscriber to a URL you control
   </Card>
 </CardGroup>
 
@@ -44,7 +44,9 @@ Apps connect your changelog to other tools. Today they do one job: when someone 
 
 That's it. New subscribers reach the connected tool within seconds of signing up.
 
-→ [Connecting Kit](/apps/kit)
+The **Webhook** app works a little differently: instead of an API key you give us a URL, and instead of picking a list we POST the whole event to you.
+
+→ [Connecting Kit](/apps/kit) · [Setting up a webhook](/apps/webhook)
 
 ## How syncing works
 
@@ -70,7 +72,7 @@ Open the **⋯** menu next to a connected app and choose **Disconnect**. This de
 
 <AccordionGroup>
   <Accordion title="Where is my API key stored?">
-    Encrypted, and never sent back to your browser — the settings page shows only the last four characters so you can tell which key is in use.
+    Encrypted, and never sent back to your browser — the settings page shows only the last four characters so you can tell which key is in use. The same is true of a webhook URL: it's a credential, so it isn't shown back to you either, and changing it means reconnecting.
   </Accordion>
   <Accordion title="What happens if I downgrade to Free?">
     Syncing stops, and your connection is kept. Upgrade again and it resumes without you having to paste the key back in. Subscribers keep being collected the whole time.
