@@ -18,10 +18,14 @@ You'll need an endpoint that:
 - is served over **https** — we won't POST subscriber addresses over plain http
 - answers **2xx** quickly (we wait 10 seconds for a response)
 - is reachable from the public internet, on a public IP address
-- accepts our **test event before you have the signing secret** — see below
+- accepts our **test event before you have the signing secret**, and answers 5xx to anything else until verification is configured — see below
 
 <Warning>
-  We send a test event the moment you connect, and the connection only succeeds if it comes back 2xx. You're given the signing secret *after* that, so an endpoint that rejects unsigned requests from the very start can't be connected. Accept the first request, then start verifying.
+  We send a test event the moment you connect, and the connection only succeeds if it comes back 2xx. You're given the signing secret *after* that, so an endpoint that rejects unsigned requests from the very start can't be connected.
+
+  That leaves a short window — connection made, secret not yet configured — in which a real subscriber can sign up. Handle it explicitly rather than choosing between two bad answers: **answer `ping` with 2xx, and answer anything else with a 5xx** until you have the secret and verification is on.
+
+  A 5xx is retried with backoff, so those deliveries arrive once you're ready. Processing them unverified would mean acting on an unauthenticated payload, and rejecting them with `401`/`403` reads to us as your endpoint refusing us — which stops the app.
 </Warning>
 
 ## Connecting
@@ -102,7 +106,12 @@ version = Time.parse(data["updated_at"])
 # misses a stored `Reader@Example.com` and you get a duplicate instead of an
 # update, and a deletion leaves the row behind while still writing a tombstone.
 email   = data["email"].strip.downcase
-digest  = Digest::SHA256.hexdigest(email)
+# Keyed, not a bare SHA-256. An email address has far too little entropy for a
+# plain hash to hide it: anyone holding this table can confirm a suspected
+# address by hashing it. The HMAC key lives outside the table (ideally outside
+# this database), which is what makes a tombstone a token rather than a
+# pseudonym for the address you were asked to erase.
+digest  = OpenSSL::HMAC.hexdigest("SHA256", ENV.fetch("TOMBSTONE_KEY"), email)
 
 # Everything below happens under one lock per address, taken by every path and
 # released at commit. Deliveries for the same subscriber can run concurrently,
@@ -121,9 +130,8 @@ ApplicationRecord.transaction do
 
   # Deleting takes the version away with the row, so a delayed signup arriving
   # afterwards would look like a brand new address and recreate what you just
-  # erased. The tombstone remembers "gone, as of this version" — and it stores
-  # a digest rather than the address, so honouring an erasure doesn't mean
-  # keeping the thing you were asked to erase.
+  # erased. The tombstone remembers "gone, as of this version" without keeping
+  # the address itself — see the keyed digest above.
   tombstone = Tombstone.find_by(email_digest: digest)
   next if tombstone && tombstone.version >= version
 
@@ -250,6 +258,9 @@ Open the **⋯** menu next to Webhook and choose **Reconnect**. The URL you stor
 ## Troubleshooting
 
 <AccordionGroup>
+  <Accordion title="A subscriber signed up before I'd configured the secret">
+    They aren't lost, as long as you answered 5xx rather than 401/403: a 5xx is retried with backoff, so the delivery lands once verification is on. Keep that window short — the retry ladder is finite, and a 401/403 in the same window stops the app instead.
+  </Accordion>
   <Accordion title="Connecting failed and I never got a secret">
     Nothing is stored when the test event doesn't come back 2xx, including the secret — the next attempt mints a new one. Check that your endpoint is live, public, and answering 2xx to a POST with a JSON body, and that it isn't rejecting the request for being unsigned.
   </Accordion>
