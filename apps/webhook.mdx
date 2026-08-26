@@ -220,7 +220,9 @@ function verify(headers, rawBody, secret) {
 
 </CodeGroup>
 
-The timestamp is inside the signature so an old delivery can't be replayed at you — reject anything more than a few minutes old.
+The timestamp is inside the signature, so rejecting anything more than a few minutes old **bounds** how long a captured delivery stays replayable. It doesn't stop a replay inside that window: the copy is byte-identical, so the signature verifies and the timestamp is still fresh.
+
+What stops a replay having an effect twice is remembering `X-UpdatesPage-Delivery` — durably, before you act on the payload, not after. The version check in the handler above covers the ordinary case for free (a repeat describes a version you have already applied), but if a delivery triggers a side effect of its own — a welcome email, a billing event, an outbound call — record the id in the same transaction as the effect and skip ids you have seen.
 
 ## How we handle your responses
 
