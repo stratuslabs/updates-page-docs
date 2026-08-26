@@ -88,7 +88,9 @@ And these headers:
 
   Deliveries aren't ordered. Someone who subscribes and immediately unsubscribes can reach you either way round, so the event name doesn't tell you what's true now: a `subscriber.created` can arrive *after* the unsubscribe that followed it.
 
-  `data.status` is what actually happened, but it's a snapshot taken when we built the payload, not when you receive it — so applying it blindly has the same problem one step down. `data.updated_at` is the version of the record that snapshot describes. Store it next to the subscriber and ignore any payload whose `updated_at` isn't newer than the one you already have, and late deliveries become harmless instead of destructive.
+  `data.status` is what actually happened, but it's a snapshot taken when we built the payload, not when you receive it — so applying it blindly has the same problem one step down. `data.updated_at` is the version of the record that snapshot describes. Store it next to the subscriber and ignore any payload whose `updated_at` is older than the one you already have, and late deliveries become harmless instead of destructive.
+
+  On an exact tie, skip anything describing the state you already hold — that's a redelivery — and otherwise let a **removal** win: an unsubscribe or delete beats a signup sharing its version. `updated_at` is a timestamp rather than a sequence, so a collision is unlikely but not impossible, and keeping someone subscribed by mistake is the error that reaches a real person.
 </Warning>
 
 Roughly:
@@ -156,7 +158,18 @@ ApplicationRecord.transaction do
   # keeping someone subscribed by mistake is the error that reaches them, and
   # dropping them is repaired by their next signup or by an export.
   removal = payload["event"] == "subscriber.deleted" || data["status"] != "subscribed"
-  next if stored && (removal ? stored > version : stored >= version)
+
+  if stored
+    next if stored > version
+
+    if stored == version
+      # A payload describing the state you already hold is a redelivery, and
+      # skipping it is what keeps a repeat from re-running your callbacks. A
+      # signup never overturns a tie. What's left — a removal that would
+      # actually change something — is the case the tie rule exists for.
+      next if subscriber.status == data["status"] || !removal
+    end
+  end
 
   if payload["event"] == "subscriber.deleted"
     # `destroy!`, not `destroy`: a `before_destroy` that throws `:abort`, or a
@@ -258,7 +271,7 @@ The version check in the handler above covers the ordinary case for free: a repe
 | **3xx** | Refused, not followed. Give us the final URL — only the first address is security-checked, so following a redirect would be a way around that |
 | **404** on a delivery that **adds** someone — a signup or a re-subscribe | Recorded and shown on the Subscriptions page, and **this delivery is dropped**. The app keeps working, so a deploy that briefly takes the route away doesn't cost you the integration — but it does cost you that delivery. If the subscriber changes later the next event carries them; if they simply stay subscribed, there is no next event, and they reach you via **Export** on the Subscribers page |
 | **404** on a delivery that **removes** someone — an unsubscribe or a delete | Retried, then retried again over the following hours. Nothing replays a removal for you: the record is gone at our end, so if this delivery is lost the address just stays in your system |
-| Any **other 4xx** — `400`, `405`, `409`, `422` — on any event | Recorded and shown on the Subscriptions page, and **this delivery is dropped**: we read it as your endpoint understanding the request and refusing it, which trying again wouldn't change. The app keeps working. See the warning below before answering a removal this way |
+| Any **other 4xx** on any event — `400`, `405`, `409`, `422` and so on, but **not** `401`, `403`, `410` or `429`, which are their own rows below | Recorded and shown on the Subscriptions page, and **this delivery is dropped**: we read it as your endpoint understanding the request and refusing it, which trying again wouldn't change. The app keeps working. See the warning below before answering a removal this way |
 | **401**, **403** | We stop and ask you to reconnect — this looks like your endpoint rejecting our signature |
 | **410 Gone** | We stop. You've told us the endpoint is permanently gone |
 | **429** | Retried with backoff |
