@@ -31,13 +31,13 @@ The same page has a **Show RSS subscription feed** toggle for the RSS button. Th
 
 ## Who we email
 
-Nobody, for now. updates.page stores your subscribers and hands them to your email tool; it doesn't send the announcement emails itself.
+Nobody, for now. updates.page stores your subscribers and hands them on; it doesn't send the announcement emails itself.
 
 That means the sequence is:
 
 1. A reader subscribes on your portal.
 2. We save them to your account.
-3. If you've connected an app, we add them to your list there within seconds.
+3. If you've connected an app, we hand them over within seconds — added to your list, tag or segment by an **email app**, or POSTed to your endpoint by [**Webhook**](/apps/webhook), which leaves what happens next to your code.
 4. You send the broadcast from your email tool, when you're ready.
 
 <Note>
@@ -59,7 +59,7 @@ Each subscriber shows:
 
 **Export** downloads the whole list as a CSV — email, name, status, source, and dates. It's the same list whatever your plan, and it's how you move subscribers into an email tool you connected after they signed up (see [Apps](/apps/overview)).
 
-Deleting a subscriber removes them from your account permanently, and removes them from the list or tag a [connected app](/apps/overview) added them to. It doesn't unsubscribe them from your email tool altogether — they may be on other lists of yours — so do that in the tool itself if you want them gone entirely.
+Deleting a subscriber removes them from your account permanently, and tells any [connected app](/apps/overview) as well. An **email app** takes them out of the list or tag it put them in — but not out of your email tool altogether, since they may be on other lists of yours, so do that in the tool itself if you want them gone entirely. [**Webhook**](/apps/webhook) sends a `subscriber.deleted` event instead: whether the address is actually erased at the other end is up to the code receiving it.
 
 <Tip>
   Your subscriber count also shows on the **Reports** page, alongside views and posts.
