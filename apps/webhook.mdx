@@ -77,7 +77,7 @@ And these headers:
 | `ping` | You connect the app. `data` carries a message, nothing else |
 | `subscriber.created` | Someone subscribes from your changelog |
 | `subscriber.updated` | Their status changes — an unsubscribe, or a re-subscribe |
-| `subscriber.deleted` | You delete them on the Subscribers page. `data` carries the email, `"status": "deleted"` and an `updated_at` of the send time — there's no record left to read |
+| `subscriber.deleted` | You delete them on the Subscribers page. `data` carries the email and `"status": "deleted"`. There's no record left to read, so `updated_at` is stamped when the deletion happened — which means it can reach you older than a signup that followed it |
 
 <Warning>
   **Act on `data.status`, not on the event name — and only if `data.updated_at` is newer than what you've stored.**
@@ -107,7 +107,13 @@ tombstone = Tombstone.find_by(email_digest: digest)
 return head :ok if tombstone && tombstone.version >= version
 
 if payload["event"] == "subscriber.deleted"
-  Subscriber.find_by(email: data["email"])&.destroy
+  existing = Subscriber.find_by(email: data["email"])
+  # A deletion is versioned at the moment it happened, so it can legitimately
+  # reach you *older* than a signup that came after it. Check it against the
+  # row like any other event, or a late delete wipes a live subscriber.
+  return head :ok if existing&.source_updated_at && existing.source_updated_at >= version
+
+  existing&.destroy
   Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
   return head :ok
 end
