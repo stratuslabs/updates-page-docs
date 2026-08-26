@@ -5,7 +5,7 @@ description: 'Connect updates.page to the tools you already use'
 
 # Apps
 
-Apps connect your changelog to other tools. Today they do one job: when someone subscribes on your portal, we add them to your email tool automatically.
+Apps connect your changelog to other tools. Today they do one job: when someone subscribes on your portal, we hand them straight to a tool of yours — your email provider, or an endpoint you run.
 
 <Note>
   Apps are available on the **Pro** plan and above. [Collecting subscribers](/portal/subscriptions) works on every plan.
@@ -23,8 +23,8 @@ Apps connect your changelog to other tools. Today they do one job: when someone 
   <Card title="Customer.io" icon="clock">
     Send subscribers to a Customer.io segment — **coming soon**
   </Card>
-  <Card title="Webhook" icon="clock">
-    POST every new subscriber to a URL you control — **coming soon**
+  <Card title="Webhook" icon="code" href="/apps/webhook">
+    POST every new subscriber to a URL you control
   </Card>
 </CardGroup>
 
@@ -35,42 +35,70 @@ Apps connect your changelog to other tools. Today they do one job: when someone 
     Go to **Settings → Portal → Subscriptions** and find the app under **Apps**
   </Step>
   <Step title="Connect">
-    Click **Connect** and paste the API key from that tool. We check the key with the provider before saving it, so you find out immediately if it's wrong.
+    **An email app** asks for the API key from that tool. We check the key with the provider before saving it, so you find out immediately if it's wrong.
+
+    **[Webhook](/apps/webhook)** asks for an `https://` endpoint instead. We prove it the same way — by sending it a signed `ping`, which has to come back 2xx before we store anything — and then show you a signing secret once. Your endpoint has to accept that first request even though you don't have the secret yet.
   </Step>
   <Step title="Choose where subscribers go">
-    Pick the list, tag, or segment new subscribers should be added to.
+    **An email app** asks which list, tag, or segment new subscribers are added to.
+
+    **Webhook** has no list — the connect step above is the whole setup, and what happens to each event is your code's decision.
   </Step>
 </Steps>
 
 That's it. New subscribers reach the connected tool within seconds of signing up.
 
-→ [Connecting Kit](/apps/kit)
+→ [Connecting Kit](/apps/kit) · [Setting up a webhook](/apps/webhook)
 
 ## How syncing works
 
 We sync a subscriber when they sign up, and again if their status changes.
 
-When someone unsubscribes from your changelog, we undo what we did — we remove them from the list, tag, or segment we added them to. We don't unsubscribe them from your email tool altogether, because they may be on other lists of yours that have nothing to do with your changelog.
+**Email apps** put them in the list, tag or segment you picked. When someone unsubscribes from your changelog we undo what we did — we take them out of that list, and no further: we don't unsubscribe them from your email tool altogether, because they may be on other lists of yours that have nothing to do with your changelog.
 
-That's also why **choosing a list or tag isn't optional**: it's what lets us honour an opt-out later. An app that doesn't have one yet won't sync at all — it will say so on the Subscriptions page — rather than adding people we'd have no way to remove.
+That's also why **choosing a list or tag isn't optional** for those apps. It's what lets us honour an opt-out later, so an email app that doesn't have one yet won't sync at all — it will say so on the Subscriptions page — rather than adding people we'd have no way to remove.
 
-Syncing is one-way. Contacts you add directly in your email tool don't appear on your Subscribers page, and people who subscribed **before** you connected the app aren't sent retroactively — reconnecting the app backfills anyone added since it last synced.
+**[Webhook](/apps/webhook) has no list to choose, so none of that applies to it.** We POST the subscriber to your endpoint on every change, opt-outs and deletions included, and what happens next is your code's decision. It starts syncing the moment it's connected.
+
+Syncing is one-way and it starts when you connect. Contacts you add directly in your email tool don't appear on your Subscribers page, and **nothing is sent retroactively** — not the people who subscribed before you connected the app, and not anyone who signed up while the app was disconnected or stopped. Reconnecting resumes syncing from that moment; it doesn't go back and catch up.
+
+A *briefly* failing endpoint is different, and only Webhook can tell you which you had. Deliveries made during a blip arrive on their own once you recover, and how long "a blip" lasts depends on the delivery:
+
+| Delivery | Retried for |
+|----------|-------------|
+| A signup or re-subscribe, on a timeout or 5xx | About six minutes |
+| The same, on a `429` | A little over an hour |
+| **An unsubscribe or delete** | The same ladder, and then further attempts over roughly the next **day** |
+
+Removals get the long tail because nothing else can replay them — the record is already gone at our end. Past those windows the attempts run out and the delivery is dropped.
+
+Export is how you close a gap left by dropped **signups**: the Subscribers page gives you the whole list as a CSV, to import into your email tool.
+
+<Warning>
+  **Export cannot recover a dropped deletion.** A deleted subscriber isn't on the Subscribers page any more, so they aren't in the CSV either — there is nothing in the export to tell you which contact to erase. If a `subscriber.deleted` delivery is lost, that address stays in your system until you reconcile it by hand. It is the one gap this page can't tell you how to close, which is why removals are retried for a day rather than six minutes.
+
+  And if your endpoint has only just recovered, give the retries time before exporting. Deliveries still on the ladder will arrive, and a CSV import carries no delivery id for your handler to recognise them by — so exporting too early is how one subscriber gets processed twice.
+</Warning>
 
 ## When something goes wrong
 
-If your email tool rejects a sync — usually because the API key was revoked or regenerated — the app shows an error on the Subscriptions page with what went wrong, and stops trying. Reconnect with a fresh key to start it again.
+Whatever the app, the Subscriptions page shows what went wrong.
+
+For an **email app**, a rejected sync usually means the API key was revoked or regenerated: syncing stops and the card asks you to reconnect with a fresh key.
+
+For **[Webhook](/apps/webhook)**, most failures don't stop the app: we keep delivering, and the error stays on the card until a delivery succeeds. What does stop it is your endpoint refusing us outright — `401` or `403`, which reads as your signature check rejecting us, and `410 Gone`, which says the endpoint is permanently retired. [The full table is on the webhook page.](/apps/webhook#how-we-handle-your-responses)
 
 Your changelog is never affected by this. Subscribers are still saved to your account even when no app is connected or a connected app is failing, so you never lose sign-ups while you sort it out.
 
 ## Disconnecting
 
-Open the **⋯** menu next to a connected app and choose **Disconnect**. This deletes the stored credential; it doesn't remove anyone from your list in the other tool.
+Open the **⋯** menu next to a connected app and choose **Disconnect**. This deletes the stored credential. It doesn't remove anyone from the list in your email tool, and it doesn't tell a webhook endpoint anything — we simply stop sending.
 
 ## Good to know
 
 <AccordionGroup>
   <Accordion title="Where is my API key stored?">
-    Encrypted, and never sent back to your browser — the settings page shows only the last four characters so you can tell which key is in use.
+    Encrypted, and never sent back to your browser — the settings page shows only the last four characters so you can tell which key is in use. The same is true of a webhook URL: it's a credential, so it isn't shown back to you either, and changing it means reconnecting.
   </Accordion>
   <Accordion title="What happens if I downgrade to Free?">
     Syncing stops, and your connection is kept. Upgrade again and it resumes without you having to paste the key back in. Subscribers keep being collected the whole time.

@@ -1,0 +1,341 @@
+---
+title: Webhook
+description: 'POST every new subscriber to a URL you control'
+---
+
+# Webhook
+
+Point us at an endpoint of your own and we'll POST a signed JSON payload every time someone subscribes to your changelog, unsubscribes, or is deleted. Use it to write subscribers into a database, a CRM, or an email tool we don't have an app for yet.
+
+<Note>
+  Apps are available on the **Pro** plan and above. [Collecting subscribers](/portal/subscriptions) works on every plan.
+</Note>
+
+## Before you start
+
+You'll need an endpoint that:
+
+- is served over **https** — we won't POST subscriber addresses over plain http
+- answers **2xx** quickly (we wait 10 seconds for a response)
+- is reachable from the public internet, on a public IP address
+- accepts our **test event before you have the signing secret**, and answers 5xx to anything else until verification is configured — see below
+
+<Warning>
+  We send a test event the moment you connect, and the connection only succeeds if it comes back 2xx. You're given the signing secret *after* that, so an endpoint that rejects unsigned requests from the very start can't be connected.
+
+  That leaves a short window — connection made, secret not yet configured — in which a real subscriber can sign up. Handle it explicitly rather than choosing between two bad answers: **answer `ping` with 2xx, and answer anything else with a 5xx** until you have the secret and verification is on.
+
+  A 5xx is retried with backoff, so those deliveries arrive once you're ready. Processing them unverified would mean acting on an unauthenticated payload, and rejecting them with `401`/`403` reads to us as your endpoint refusing us — which stops the app.
+</Warning>
+
+## Connecting
+
+<Steps>
+  <Step title="Open your subscription settings">
+    Go to **Settings → Portal → Subscriptions** and find **Webhook** under **Apps**
+  </Step>
+  <Step title="Paste your endpoint URL">
+    Click **Connect** and enter the https URL we should POST to. We send a `ping` event straight away — if your endpoint doesn't answer 2xx, nothing is stored and you can try again.
+  </Step>
+  <Step title="Copy your signing secret">
+    We show it once. Store it somewhere your endpoint can read it.
+  </Step>
+</Steps>
+
+## What we send
+
+Every delivery is a `POST` with a JSON body:
+
+```json
+{
+  "id": "0f1c4a9e-3c1e-4f6a-9c4a-2f0c8b6d1a77",
+  "event": "subscriber.created",
+  "sent_at": "2026-08-25T10:14:03.481Z",
+  "data": {
+    "id": "wJ8kQz",
+    "email": "reader@example.com",
+    "name": "Sam Reader",
+    "status": "subscribed",
+    "source": "portal",
+    "updated_at": "2026-08-25T10:14:03.477412Z",
+    "subscribed_at": "2026-08-25T10:14:03Z",
+    "unsubscribed_at": null,
+    "created_at": "2026-08-25T10:14:03Z"
+  }
+}
+```
+
+And these headers:
+
+| Header | Value |
+|--------|-------|
+| `X-UpdatesPage-Event` | The event name, also in the body |
+| `X-UpdatesPage-Delivery` | The id of this delivery — the same value as `id` in the body, and **stable across our retries**. Convenient in logs, but it isn't signed: dedupe on the body's `id` |
+| `X-UpdatesPage-Timestamp` | Unix seconds, part of what's signed |
+| `X-UpdatesPage-Signature` | `sha256=` followed by the HMAC — see below |
+
+### Events
+
+| Event | When |
+|-------|------|
+| `ping` | You connect the app. `data` carries a message, nothing else |
+| `subscriber.created` | Someone subscribes from your changelog |
+| `subscriber.updated` | Their status changes — an unsubscribe, or a re-subscribe |
+| `subscriber.deleted` | You delete them on the Subscribers page. `data` carries the email and `"status": "deleted"`. There's no record left to read, so `updated_at` is stamped when the deletion happened — which means it can reach you older than a signup that followed it |
+
+<Warning>
+  **Act on `data.status`, not on the event name — and only if `data.updated_at` is newer than what you've stored.**
+
+  Deliveries aren't ordered. Someone who subscribes and immediately unsubscribes can reach you either way round, so the event name doesn't tell you what's true now: a `subscriber.created` can arrive *after* the unsubscribe that followed it.
+
+  `data.status` is what actually happened, but it's a snapshot taken when we built the payload, not when you receive it — so applying it blindly has the same problem one step down. `data.updated_at` is the version of the record that snapshot describes. Store it next to the subscriber and ignore any payload whose `updated_at` is older than the one you already have, and late deliveries become harmless instead of destructive.
+
+  On an exact tie, skip anything describing the state you already hold — that's a redelivery — and otherwise let a **removal** win: an unsubscribe or delete beats a signup sharing its version. `updated_at` is a timestamp rather than a sequence, so a collision is unlikely but not impossible, and keeping someone subscribed by mistake is the error that reaches a real person.
+</Warning>
+
+Roughly. `Subscriber` here is **your own table for the people we send you** — a mirror of your updates.page list, not a shared contacts table your CRM also writes to. That matters at the deletion branch; there's a note below on adapting it if the two are the same table.
+
+```ruby
+# The connect ping carries no record — and it is the first delivery you'll
+# ever get, so handle it before anything reaches for `data`.
+return head :ok if payload["event"] == "ping"
+
+data    = payload["data"]
+version = Time.parse(data["updated_at"])
+# Normalise once and use it for everything below. We always send a lowercased
+# address, but a contact already in your database may not be stored that way —
+# so the lookup is case-insensitive too, or an incoming `reader@example.com`
+# misses a stored `Reader@Example.com` and you get a duplicate instead of an
+# update, and a deletion leaves the row behind while still writing a tombstone.
+email   = data["email"].strip.downcase
+# Keyed, not a bare SHA-256. An email address has far too little entropy for a
+# plain hash to hide it: anyone holding this table can confirm a suspected
+# address by hashing it. The HMAC key lives outside the table (ideally outside
+# this database), which is what makes a tombstone a token rather than a
+# pseudonym for the address you were asked to erase.
+#
+# The key is what finds an existing tombstone, so rotating it orphans every
+# tombstone written under the old one — and they can't be re-keyed, because the
+# address they were derived from is gone. See the note below before rotating.
+digest  = OpenSSL::HMAC.hexdigest("SHA256", ENV.fetch("TOMBSTONE_KEY"), email)
+
+# Everything below happens under one lock per address, taken by every path and
+# released at commit. Deliveries for the same subscriber can run concurrently,
+# and reading state, deciding you're newer and writing is three steps — so
+# without this two of them read the same state, both decide they're newer, and
+# whichever commits last wins regardless of which one is.
+#
+# It has to cover the tombstone as well as the row. Locking only the subscriber
+# leaves a delete and an older update each blind to what the other is doing:
+# the update sees no tombstone, waits, and inserts the row the delete has since
+# destroyed.
+ApplicationRecord.transaction do
+  ActiveRecord::Base.connection.select_value(
+    "SELECT pg_advisory_xact_lock(hashtext(#{ActiveRecord::Base.connection.quote(digest)}))"
+  )
+
+  # Deleting takes the version away with the row, so a delayed signup arriving
+  # afterwards would look like a brand new address and recreate what you just
+  # erased. The tombstone remembers "gone, as of this version" without keeping
+  # the address itself — see the keyed digest above.
+  tombstone = Tombstone.find_by(email_digest: digest)
+  next if tombstone && tombstone.version >= version
+
+  subscriber = Subscriber.find_by("lower(email) = ?", email)
+  stored     = subscriber&.source_updated_at
+
+  # An out-of-order delivery describes a version you have already moved past.
+  # `stored` is nil for an address you've never seen *and* for a row that
+  # predates this integration — most often one you imported from the Export
+  # CSV before connecting, which carries no version. Both take the version
+  # they're given. A deletion is checked here too: it's versioned at the moment
+  # it happened, so it can legitimately arrive older than a signup that
+  # followed it, and a late delete must not wipe a live subscriber.
+  #
+  # An exact tie is the interesting case. Equal versions are almost always a
+  # redelivery of a state you hold, so skipping is right — but `updated_at` is
+  # a timestamp, not a sequence, so two *different* states can in principle
+  # share one, and nothing in the payload can order them. Removals get the tie:
+  # keeping someone subscribed by mistake is the error that reaches them, and
+  # dropping them is repaired by their next signup or by an export.
+  removal = payload["event"] == "subscriber.deleted" || data["status"] != "subscribed"
+
+  if stored
+    next if stored > version
+
+    if stored == version
+      # A payload describing the state you already hold is a redelivery, and
+      # skipping it is what keeps a repeat from re-running your callbacks. A
+      # signup never overturns a tie. What's left — a removal that would
+      # actually change something — is the case the tie rule exists for.
+      next if subscriber.status == data["status"] || !removal
+    end
+  end
+
+  if payload["event"] == "subscriber.deleted"
+    # `destroy!`, not `destroy`: a `before_destroy` that throws `:abort`, or a
+    # `dependent: :restrict_with_error`, makes `destroy` return false without
+    # raising — which would write the tombstone and answer 2xx for a deletion
+    # that never happened, and then suppress every later delivery for that
+    # address. Raising rolls the tombstone back with it and we retry.
+    subscriber&.destroy!
+    Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
+  else
+    # `name` is only assigned when the payload carries one. The portal's form
+    # asks for an address and nothing else, so most payloads have `nil` here —
+    # and passing that through would wipe a name you already had, on every
+    # ordinary status change.
+    attrs = { status: data["status"], source_updated_at: version }
+    attrs[:name] = data["name"] if data["name"].present?
+
+    (subscriber || Subscriber.new(email: email)).update!(**attrs)
+  end
+end
+
+head :ok
+```
+
+<Note>
+  `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload, which two deliveries can easily share — it's for your logs, not for ordering.
+
+  **`updated_at` is not a sequence number, though, and the handler above deliberately treats a tie as "already applied".** It's a microsecond timestamp stamped by whichever of our processes wrote the row, so an exact collision is unlikely but not impossible. For a redelivery of the same state, skipping is exactly right. For two *different* states sharing a version, nothing in the payload can order them — so if you want a rule, prefer the one that leaves the person **off** your list: an unsubscribe or delete beats a signup on an exact tie. Wrongly keeping someone subscribed is the error that reaches them; wrongly dropping them is repaired by their next signup, or by Export.
+
+  **If that table *is* your contacts table, don't `destroy!`.** The example owns its rows, so deleting one is safe. A contact in a CRM usually isn't ours to delete — it may predate this integration and belong to other lists, workflows or invoices — and `subscriber.deleted` cannot tell you which. Remove the updates.page membership instead (a join row, a list flag, a tag) and leave the person alone. The version and tombstone bookkeeping is unchanged; only the destructive line moves.
+
+  That does mean the address stays in your system, which is the opposite of what a deletion is asking for. It's the honest answer: we're telling you someone asked us to erase them *here*, and whether that obliges you to erase them *there* depends on why you hold them, which only you know.
+
+  Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
+
+  **That pruning window is also the rotation window for `TOMBSTONE_KEY`.** The key is what finds a tombstone, so rotating it makes every existing one unfindable, and there is nothing to migrate: the address the digest came from was deleted, which is the point. A delayed signup that a tombstone was holding back would then land, recreating someone you erased. So either keep the key stable until every tombstone written under it has been pruned, or — if you must rotate sooner — write new tombstones with the new key and look up under both until the old ones have aged out.
+
+  An advisory lock is one way to serialise deliveries for an address, not the only one. What matters is the guarantee: nothing may read the stored version, decide it is newer, and be overtaken before it writes — and the subscriber row and its tombstone both have to be covered by it, or a delete and an older update will still slip past each other.
+
+  Conditional writes get you there without a lock, but they replace the whole handler rather than one line of it: the comparison has to admit unversioned rows (`WHERE source_updated_at IS NULL OR source_updated_at < $version` — plain `<` is *unknown* against `NULL` in SQL, so it matches nothing and silently drops the first event for a contact that predates the integration), and the create and the tombstone each need their own atomic form. That's why the example above uses a lock: one guard covering every path is easier to get right than four conditional writes that must agree.
+
+  Two addresses whose digests collide in `hashtext` just serialise with each other occasionally, which costs nothing.
+</Note>
+
+## Verifying the signature
+
+`X-UpdatesPage-Signature` is `sha256=` plus an HMAC-SHA256, keyed with your signing secret, over the timestamp and the raw body joined by a dot:
+
+```
+sha256=HMAC_SHA256(secret, "<X-UpdatesPage-Timestamp>.<raw request body>")
+```
+
+Sign the **raw body** as received, before any JSON parsing — re-serializing changes the bytes and the signature won't match.
+
+<CodeGroup>
+
+```ruby Ruby
+require "openssl"
+
+def verify(request, secret)
+  timestamp = request.headers["X-UpdatesPage-Timestamp"]
+  signature = request.headers["X-UpdatesPage-Signature"].to_s
+  expected  = "sha256=" + OpenSSL::HMAC.hexdigest("SHA256", secret, "#{timestamp}.#{request.raw_post}")
+
+  # Constant-time compare, and refuse anything older than five minutes.
+  return false unless OpenSSL.secure_compare(signature, expected)
+
+  (Time.now.to_i - timestamp.to_i).abs < 300
+end
+```
+
+```javascript Node
+import crypto from "node:crypto"
+
+function verify(headers, rawBody, secret) {
+  const timestamp = headers["x-updatespage-timestamp"]
+  const signature = headers["x-updatespage-signature"] || ""
+  const expected =
+    "sha256=" +
+    crypto.createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex")
+
+  // Compare the buffers' byte lengths, not the strings'. A header with a
+  // non-ASCII character can match on string length and still produce a
+  // different number of UTF-8 bytes, and timingSafeEqual *throws* on a length
+  // mismatch rather than returning false.
+  const received = Buffer.from(signature, "utf8")
+  const computed = Buffer.from(expected, "utf8")
+
+  if (received.length !== computed.length) return false
+  if (!crypto.timingSafeEqual(received, computed)) return false
+
+  return Math.abs(Date.now() / 1000 - Number(timestamp)) < 300
+}
+```
+
+</CodeGroup>
+
+The timestamp is inside the signature, so rejecting anything more than a few minutes old **bounds** how long a captured delivery stays replayable. It doesn't stop a replay inside that window: the copy is byte-identical, so the signature verifies and the timestamp is still fresh.
+
+What stops a replay having an effect twice is remembering the delivery id — durably, before you act on the payload, not after. Read it from the **body**, not from `X-UpdatesPage-Delivery`. The two carry the same value, but the signature covers the timestamp and the raw bytes and nothing else, so a replayed request can arrive with a fresh header and still verify; a receiver deduping on the header sees a new id every time and treats every replay as new. Comparing the header against the body's `id` and refusing a mismatch works just as well — it is the same rule, which is that the signed copy is the authority.
+
+The version check in the handler above covers the ordinary case for free: a repeat describes a version you have already applied. A side effect of the delivery's own — a welcome email, a billing event, an outbound call — is the case it doesn't cover, and it can't be folded into your transaction, because the effect happens somewhere your transaction doesn't reach. Commit the id first and a crash before the call loses it; make the call first and a crash before the commit repeats it on our retry. What you *can* do atomically is record the id **and** enqueue an outbox row in the same transaction, then let a worker make the call from that row — and pass the delivery id as the idempotency key wherever the far end accepts one, since at-least-once is as good as that half gets.
+
+## How we handle your responses
+
+| Response | What happens |
+|----------|--------------|
+| **2xx** | Delivered |
+| **3xx** — `301`, `302`, `307`, `308` | Refused, not followed, and **this delivery is dropped** (recorded on the Subscriptions page; the app keeps working). Only the first address is security-checked, so following a redirect would be a way around that. Give us the final URL — but note that correcting it does **not** replay what was dropped, and on a removal there is nothing to replay it from, so a canonical-path redirect is worth catching early |
+| **404** on a delivery that **adds** someone — a signup or a re-subscribe | Recorded and shown on the Subscriptions page, and **this delivery is dropped**. The app keeps working, so a deploy that briefly takes the route away doesn't cost you the integration — but it does cost you that delivery. If the subscriber changes later the next event carries them; if they simply stay subscribed, there is no next event, and they reach you via **Export** on the Subscribers page |
+| **404** on a delivery that **removes** someone — an unsubscribe or a delete | Retried on the ordinary ladder, then retried again in long-delayed rounds over roughly the next **day**. Nothing replays a removal for you: the record is gone at our end, so if this delivery is lost the address just stays in your system, and no export will tell you which one it was |
+| Any **other 4xx** on any event — `400`, `405`, `409`, `422` and so on, but **not** `401`, `403`, `410` or `429`, which are their own rows below | Recorded and shown on the Subscriptions page, and **this delivery is dropped**: we read it as your endpoint understanding the request and refusing it, which trying again wouldn't change. The app keeps working. See the warning below before answering a removal this way |
+| **401**, **403** | We stop and ask you to reconnect — this looks like your endpoint rejecting our signature |
+| **410 Gone** | We stop. You've told us the endpoint is permanently gone |
+| **429** | Retried with backoff |
+| **5xx**, timeout, connection error | Retried with backoff, then recorded |
+
+**Which of the two `404` rows applies is decided by what the delivery does, not by its event name.** An unsubscribe and a re-subscribe are both `subscriber.updated`, so the name can't separate them: we read the subscriber's status from their record when the delivery runs, and a delivery that leaves them off your list is a removal. It's the same rule the warning above gives you — don't trust the event name — applied on our side.
+
+Subscribers are always saved to your account before we try to deliver them, so a failing endpoint never costs you a *subscriber* — the Subscribers page and **Export** always have the people who are on your list. What a dropped delivery costs is the *delivery*: your system doesn't learn about that person until the next event for them, or until you export.
+
+The exception is a **deletion**, and it's the one worth remembering: that person is no longer on the Subscribers page, so they aren't in the export either. A dropped `subscriber.deleted` leaves the address in your system with nothing on our side to tell you which one it was. That is why removals are retried far longer than anything else, and why the warning below matters more than it looks.
+
+<Warning>
+  **Don't answer an unsubscribe or delete with a 4xx you mean as "try again later".** `404` is the one exception — we treat it as a route that hasn't deployed yet and retry. Every other 4xx drops the delivery, and a removal is the one event we cannot replay for you: the record is already gone at our end, so its address exists only in that delivery. The address then stays in your system with nothing left to take it out.
+
+  If you need us to come back, answer **5xx** (or `429`). Both retry with backoff — about six minutes for a 5xx and a little over an hour for a `429` — and a removal then keeps getting further attempts over roughly the next day after that ladder runs out.
+</Warning>
+
+## Changing the URL or the secret
+
+Open the **⋯** menu next to Webhook and choose **Reconnect**. The URL you stored isn't shown back to you — it's kept encrypted like any other credential — so reconnecting means entering it again.
+
+<Note>
+  **Reconnecting issues a new signing secret and retires the old one.** That's also how you rotate: there's no separate rotate button, and the secret can't be looked up after the one time we show it.
+</Note>
+
+<Warning>
+  **Put your endpoint back into ping-only mode before you click Reconnect.** The reconnect is proved the same way the first connect is — with a signed `ping` — and that ping is signed with the **new** secret, which you don't have yet because we only show it once the reconnect succeeds. An endpoint strictly verifying with the old secret rejects it, we store nothing, and the rotation can't complete.
+
+  So the order is: accept `ping` without verifying (5xx everything else, as when you first connected) → Reconnect → copy the new secret → install it → resume verifying. It's the same bootstrap window as a first connect, and worth keeping just as short.
+</Warning>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="A subscriber signed up before I'd configured the secret">
+    They aren't lost, as long as you answered 5xx rather than 401/403: a 5xx is retried with backoff, so the delivery lands once verification is on. Keep that window short — the retry ladder is finite, and a 401/403 in the same window stops the app instead.
+  </Accordion>
+  <Accordion title="Connecting failed and I never got a secret">
+    Nothing is stored when the test event doesn't come back 2xx, including the secret — the next attempt mints a new one. Check that your endpoint is live, public, and answering 2xx to a POST with a JSON body, and that it isn't rejecting the request for being unsigned.
+  </Accordion>
+  <Accordion title="Webhook URLs must start with https://">
+    We only POST subscriber addresses over https. A local tunnel (ngrok, Cloudflare Tunnel) gives you an https URL for testing.
+  </Accordion>
+  <Accordion title="That webhook URL now resolves to a private address">
+    The host resolves to a private, loopback, or otherwise non-public address. We refuse those, at connect time and on every delivery — a URL we POST to is our server reaching out on your behalf, and internal addresses aren't ours to reach. `localhost` and `127.0.0.1` won't work; use a tunnel.
+  </Accordion>
+  <Accordion title="Signatures don't match">
+    Almost always the body. Sign the raw bytes as received, not a re-serialized copy of the parsed JSON — key order and whitespace both change the result. Check too that the timestamp header is part of what you sign, joined to the body with a dot.
+  </Accordion>
+  <Accordion title="I got the same event twice">
+    A retry carries the **same** delivery id as the attempt it repeats — deliberately, so you can recognise it. Store the ids you've handled and ignore repeats, taking the id from the body rather than the header (see above: only the body's copy is signed). The `updated_at` check above catches them too, since a redelivery describes a version you've already applied.
+  </Accordion>
+  <Accordion title="Subscribers from before I connected weren't sent">
+    Syncing starts when you connect. Export the earlier ones from the Subscribers page.
+  </Accordion>
+</AccordionGroup>

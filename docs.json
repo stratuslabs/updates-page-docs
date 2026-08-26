@@ -67,7 +67,8 @@
         "group": "Apps",
         "pages": [
           "apps/overview",
-          "apps/kit"
+          "apps/kit",
+          "apps/webhook"
         ]
       },
       {

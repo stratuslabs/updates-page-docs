@@ -75,7 +75,7 @@ Open the **⋯** menu next to Kit and choose **Configure** to pick a different t
     Also check you copied the whole key, with no trailing space.
   </Accordion>
   <Accordion title="Kit shows an error after working fine">
-    The key was regenerated or revoked in Kit. Create a new one and reconnect — your subscribers are safe on the Subscribers page in the meantime, and they'll be backfilled to Kit once you reconnect.
+    The key was regenerated or revoked in Kit. Create a new one and reconnect. Your subscribers are safe on the Subscribers page in the meantime — but syncing resumes from the moment you reconnect and does **not** catch up on anyone who signed up while it was broken, so export the list and import the gap into Kit if the outage lasted.
   </Accordion>
   <Accordion title="My tags aren't loading">
     That's the same connection being tested — if we can't list your tags, we can't add subscribers either. Reconnect with a fresh key.
@@ -88,6 +88,8 @@ Open the **⋯** menu next to Kit and choose **Configure** to pick a different t
     If you want them gone entirely, remove them in Kit.
   </Accordion>
   <Accordion title="Subscribers from before I connected aren't in Kit">
-    Syncing starts when you connect. Reconnecting the app backfills anyone who subscribed since it last synced successfully, but people who signed up before you first connected aren't sent — export them from the Subscribers page and import them into Kit if you need them.
+    Syncing starts when you connect, and nothing is sent retroactively — not the people who signed up before you first connected, and not anyone added while the app was showing an error. Export them from the Subscribers page and import them into Kit.
+
+    A brief failure is not the same thing: if Kit was slow or briefly unavailable we retry for a few minutes and those subscribers arrive on their own, so give it that long before exporting. A dead API key doesn't retry at all — see the reconnect case above.
   </Accordion>
 </AccordionGroup>
