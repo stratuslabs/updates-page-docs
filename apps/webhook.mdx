@@ -96,21 +96,37 @@ return head :ok if payload["event"] == "ping"
 
 data    = payload["data"]
 version = Time.parse(data["updated_at"])
+digest  = Digest::SHA256.hexdigest(data["email"].strip.downcase)
 
-# A deletion has no record left to version against — act on it and stop.
-return destroy_subscriber(data["email"]) if payload["event"] == "subscriber.deleted"
+# Deleting takes the version away with the row, so a delayed signup that
+# arrives afterwards looks like a brand new address and recreates what you
+# just erased. The tombstone is what remembers "gone, as of this version" —
+# and it stores a digest rather than the address, so honouring an erasure
+# doesn't mean keeping the thing you were asked to erase.
+tombstone = Tombstone.find_by(email_digest: digest)
+return head :ok if tombstone && tombstone.version >= version
+
+if payload["event"] == "subscriber.deleted"
+  Subscriber.find_by(email: data["email"])&.destroy
+  Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
+  return head :ok
+end
 
 subscriber = Subscriber.find_or_initialize_by(email: data["email"])
+stored     = subscriber.source_updated_at
 
 # An out-of-order delivery describes a version you have already moved past.
-# Only an existing row has one; a new address is always news.
-return head :ok if subscriber.persisted? && subscriber.source_updated_at >= version
+# `stored` is nil for a new row *and* for a contact that was already in your
+# database before you connected this — both take the version they're given.
+return head :ok if stored && stored >= version
 
 subscriber.update!(status: data["status"], name: data["name"], source_updated_at: version)
 ```
 
 <Note>
   `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload — useful in logs, but two deliveries can share a `sent_at` where they can't share an `updated_at`.
+
+  Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
 </Note>
 
 ## Verifying the signature
