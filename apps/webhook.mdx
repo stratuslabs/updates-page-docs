@@ -160,7 +160,11 @@ head :ok
 
   Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
 
-  An advisory lock is one way to serialise deliveries for an address, not the only one — conditional writes (`UPDATE ... WHERE source_updated_at < $version`) do the same job without a lock. What matters is that nothing can read the stored version, decide it's newer, and be overtaken before it writes, and that the subscriber row and its tombstone are covered by the same guarantee. Two addresses whose digests collide in `hashtext` just serialise with each other occasionally, which costs nothing.
+  An advisory lock is one way to serialise deliveries for an address, not the only one. What matters is the guarantee: nothing may read the stored version, decide it is newer, and be overtaken before it writes — and the subscriber row and its tombstone both have to be covered by it, or a delete and an older update will still slip past each other.
+
+  Conditional writes get you there without a lock, but they replace the whole handler rather than one line of it: the comparison has to admit unversioned rows (`WHERE source_updated_at IS NULL OR source_updated_at < $version` — plain `<` is *unknown* against `NULL` in SQL, so it matches nothing and silently drops the first event for a contact that predates the integration), and the create and the tombstone each need their own atomic form. That's why the example above uses a lock: one guard covering every path is easier to get right than four conditional writes that must agree.
+
+  Two addresses whose digests collide in `hashtext` just serialise with each other occasionally, which costs nothing.
 </Note>
 
 ## Verifying the signature
