@@ -70,7 +70,7 @@ And these headers:
 | Header | Value |
 |--------|-------|
 | `X-UpdatesPage-Event` | The event name, also in the body |
-| `X-UpdatesPage-Delivery` | The id of this delivery — the same value as `id` in the body. **Stable across our retries**, so it's what you dedupe on |
+| `X-UpdatesPage-Delivery` | The id of this delivery — the same value as `id` in the body, and **stable across our retries**. Convenient in logs, but it isn't signed: dedupe on the body's `id` |
 | `X-UpdatesPage-Timestamp` | Unix seconds, part of what's signed |
 | `X-UpdatesPage-Signature` | `sha256=` followed by the HMAC — see below |
 
@@ -230,7 +230,9 @@ function verify(headers, rawBody, secret) {
 
 The timestamp is inside the signature, so rejecting anything more than a few minutes old **bounds** how long a captured delivery stays replayable. It doesn't stop a replay inside that window: the copy is byte-identical, so the signature verifies and the timestamp is still fresh.
 
-What stops a replay having an effect twice is remembering `X-UpdatesPage-Delivery` — durably, before you act on the payload, not after. The version check in the handler above covers the ordinary case for free (a repeat describes a version you have already applied), but if a delivery triggers a side effect of its own — a welcome email, a billing event, an outbound call — record the id in the same transaction as the effect and skip ids you have seen.
+What stops a replay having an effect twice is remembering the delivery id — durably, before you act on the payload, not after. Read it from the **body**, not from `X-UpdatesPage-Delivery`. The two carry the same value, but the signature covers the timestamp and the raw bytes and nothing else, so a replayed request can arrive with a fresh header and still verify; a receiver deduping on the header sees a new id every time and treats every replay as new. Comparing the header against the body's `id` and refusing a mismatch works just as well — it is the same rule, which is that the signed copy is the authority.
+
+The version check in the handler above covers the ordinary case for free: a repeat describes a version you have already applied. A side effect of the delivery's own — a welcome email, a billing event, an outbound call — is the case it doesn't cover, and it can't be folded into your transaction, because the effect happens somewhere your transaction doesn't reach. Commit the id first and a crash before the call loses it; make the call first and a crash before the commit repeats it on our retry. What you *can* do atomically is record the id **and** enqueue an outbox row in the same transaction, then let a worker make the call from that row — and pass the delivery id as the idempotency key wherever the far end accepts one, since at-least-once is as good as that half gets.
 
 ## How we handle your responses
 
@@ -274,7 +276,7 @@ Open the **⋯** menu next to Webhook and choose **Reconnect**. The URL you stor
     Almost always the body. Sign the raw bytes as received, not a re-serialized copy of the parsed JSON — key order and whitespace both change the result. Check too that the timestamp header is part of what you sign, joined to the body with a dot.
   </Accordion>
   <Accordion title="I got the same event twice">
-    A retry carries the **same** `X-UpdatesPage-Delivery` as the attempt it repeats — deliberately, so you can recognise it. Store the ids you've handled and ignore repeats. The `updated_at` check above catches them too, since a redelivery describes a version you've already applied.
+    A retry carries the **same** delivery id as the attempt it repeats — deliberately, so you can recognise it. Store the ids you've handled and ignore repeats, taking the id from the body rather than the header (see above: only the body's copy is signed). The `updated_at` check above catches them too, since a redelivery describes a version you've already applied.
   </Accordion>
   <Accordion title="Subscribers from before I connected weren't sent">
     Syncing starts when you connect. Export the earlier ones from the Subscribers page.
