@@ -270,7 +270,7 @@ The version check in the handler above covers the ordinary case for free: a repe
 | **2xx** | Delivered |
 | **3xx** — `301`, `302`, `307`, `308` | Refused, not followed, and **this delivery is dropped** (recorded on the Subscriptions page; the app keeps working). Only the first address is security-checked, so following a redirect would be a way around that. Give us the final URL — but note that correcting it does **not** replay what was dropped, and on a removal there is nothing to replay it from, so a canonical-path redirect is worth catching early |
 | **404** on a delivery that **adds** someone — a signup or a re-subscribe | Recorded and shown on the Subscriptions page, and **this delivery is dropped**. The app keeps working, so a deploy that briefly takes the route away doesn't cost you the integration — but it does cost you that delivery. If the subscriber changes later the next event carries them; if they simply stay subscribed, there is no next event, and they reach you via **Export** on the Subscribers page |
-| **404** on a delivery that **removes** someone — an unsubscribe or a delete | Retried, then retried again over the following hours. Nothing replays a removal for you: the record is gone at our end, so if this delivery is lost the address just stays in your system |
+| **404** on a delivery that **removes** someone — an unsubscribe or a delete | Retried on the ordinary ladder, then retried again in long-delayed rounds over roughly the next **day**. Nothing replays a removal for you: the record is gone at our end, so if this delivery is lost the address just stays in your system, and no export will tell you which one it was |
 | Any **other 4xx** on any event — `400`, `405`, `409`, `422` and so on, but **not** `401`, `403`, `410` or `429`, which are their own rows below | Recorded and shown on the Subscriptions page, and **this delivery is dropped**: we read it as your endpoint understanding the request and refusing it, which trying again wouldn't change. The app keeps working. See the warning below before answering a removal this way |
 | **401**, **403** | We stop and ask you to reconnect — this looks like your endpoint rejecting our signature |
 | **410 Gone** | We stop. You've told us the endpoint is permanently gone |
@@ -286,7 +286,7 @@ The exception is a **deletion**, and it's the one worth remembering: that person
 <Warning>
   **Don't answer an unsubscribe or delete with a 4xx you mean as "try again later".** `404` is the one exception — we treat it as a route that hasn't deployed yet and retry. Every other 4xx drops the delivery, and a removal is the one event we cannot replay for you: the record is already gone at our end, so its address exists only in that delivery. The address then stays in your system with nothing left to take it out.
 
-  If you need us to come back, answer **5xx** (or `429`). Both retry with backoff, and a removal keeps getting further attempts over the following hours after the ordinary ladder runs out.
+  If you need us to come back, answer **5xx** (or `429`). Both retry with backoff — about six minutes for a 5xx and a little over an hour for a `429` — and a removal then keeps getting further attempts over roughly the next day after that ladder runs out.
 </Warning>
 
 ## Changing the URL or the secret
