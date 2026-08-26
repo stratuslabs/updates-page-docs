@@ -98,53 +98,50 @@ data    = payload["data"]
 version = Time.parse(data["updated_at"])
 digest  = Digest::SHA256.hexdigest(data["email"].strip.downcase)
 
-# Deleting takes the version away with the row, so a delayed signup that
-# arrives afterwards looks like a brand new address and recreates what you
-# just erased. The tombstone is what remembers "gone, as of this version" —
-# and it stores a digest rather than the address, so honouring an erasure
-# doesn't mean keeping the thing you were asked to erase.
-tombstone = Tombstone.find_by(email_digest: digest)
-return head :ok if tombstone && tombstone.version >= version
+# Everything below happens under one lock per address, taken by every path and
+# released at commit. Deliveries for the same subscriber can run concurrently,
+# and reading state, deciding you're newer and writing is three steps — so
+# without this two of them read the same state, both decide they're newer, and
+# whichever commits last wins regardless of which one is.
+#
+# It has to cover the tombstone as well as the row. Locking only the subscriber
+# leaves a delete and an older update each blind to what the other is doing:
+# the update sees no tombstone, waits, and inserts the row the delete has since
+# destroyed.
+ApplicationRecord.transaction do
+  ActiveRecord::Base.connection.select_value(
+    "SELECT pg_advisory_xact_lock(hashtext(#{ActiveRecord::Base.connection.quote(digest)}))"
+  )
 
-if payload["event"] == "subscriber.deleted"
-  Subscriber.transaction do
-    existing = Subscriber.lock.find_by(email: data["email"])
-    # A deletion is versioned at the moment it happened, so it can legitimately
-    # reach you *older* than a signup that came after it. Check it against the
-    # row like any other event, or a late delete wipes a live subscriber.
-    stored = existing&.source_updated_at
-    unless stored && stored >= version
-      existing&.destroy
-      Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
-    end
-  end
+  # Deleting takes the version away with the row, so a delayed signup arriving
+  # afterwards would look like a brand new address and recreate what you just
+  # erased. The tombstone remembers "gone, as of this version" — and it stores
+  # a digest rather than the address, so honouring an erasure doesn't mean
+  # keeping the thing you were asked to erase.
+  tombstone = Tombstone.find_by(email_digest: digest)
+  next if tombstone && tombstone.version >= version
 
-  return head :ok
-end
-
-Subscriber.transaction do
-  # Settles the race between two deliveries for an address neither has seen:
-  # the unique index picks a winner and the loser reads the row back.
-  subscriber = Subscriber.create_or_find_by!(email: data["email"]) do |row|
-    row.status = data["status"]
-    row.name = data["name"]
-    row.source_updated_at = version
-  end
-
-  # The lock is what makes comparing and writing a single step. Two deliveries
-  # for one subscriber really can be in flight at once — without it both read
-  # the same version, both decide they're newer, and whichever commits last
-  # wins regardless of which one is.
-  subscriber.lock!
-  stored = subscriber.source_updated_at
+  subscriber = Subscriber.find_by(email: data["email"])
+  stored     = subscriber&.source_updated_at
 
   # An out-of-order delivery describes a version you have already moved past.
-  # `stored` is nil for a contact that was already in your database before you
-  # connected this — it takes the version it's given.
+  # `stored` is nil for an address you've never seen *and* for a contact that
+  # was in your database before you connected this — both take the version
+  # they're given. A deletion is checked here too: it's versioned at the moment
+  # it happened, so it can legitimately arrive older than a signup that
+  # followed it, and a late delete must not wipe a live subscriber.
   next if stored && stored >= version
 
-  subscriber.update!(status: data["status"], name: data["name"], source_updated_at: version)
+  if payload["event"] == "subscriber.deleted"
+    subscriber&.destroy
+    Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
+  else
+    (subscriber || Subscriber.new(email: data["email"]))
+      .update!(status: data["status"], name: data["name"], source_updated_at: version)
+  end
 end
+
+head :ok
 ```
 
 <Note>
@@ -152,7 +149,7 @@ end
 
   Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
 
-  A row lock is one way to make the compare and the write atomic, not the only one — a conditional `UPDATE ... WHERE source_updated_at < $version` does the same job in a single statement. What matters is that nothing can read the stored version, decide it's older, and be overtaken before it writes. Whatever you pick, apply it to the tombstone table too.
+  An advisory lock is one way to serialise deliveries for an address, not the only one — conditional writes (`UPDATE ... WHERE source_updated_at < $version`) do the same job without a lock. What matters is that nothing can read the stored version, decide it's newer, and be overtaken before it writes, and that the subscriber row and its tombstone are covered by the same guarantee. Two addresses whose digests collide in `hashtext` just serialise with each other occasionally, which costs nothing.
 </Note>
 
 ## Verifying the signature
