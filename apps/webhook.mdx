@@ -96,7 +96,13 @@ return head :ok if payload["event"] == "ping"
 
 data    = payload["data"]
 version = Time.parse(data["updated_at"])
-digest  = Digest::SHA256.hexdigest(data["email"].strip.downcase)
+# Normalise once and use it for everything below. We always send a lowercased
+# address, but a contact already in your database may not be stored that way —
+# so the lookup is case-insensitive too, or an incoming `reader@example.com`
+# misses a stored `Reader@Example.com` and you get a duplicate instead of an
+# update, and a deletion leaves the row behind while still writing a tombstone.
+email   = data["email"].strip.downcase
+digest  = Digest::SHA256.hexdigest(email)
 
 # Everything below happens under one lock per address, taken by every path and
 # released at commit. Deliveries for the same subscriber can run concurrently,
@@ -121,7 +127,7 @@ ApplicationRecord.transaction do
   tombstone = Tombstone.find_by(email_digest: digest)
   next if tombstone && tombstone.version >= version
 
-  subscriber = Subscriber.find_by(email: data["email"])
+  subscriber = Subscriber.find_by("lower(email) = ?", email)
   stored     = subscriber&.source_updated_at
 
   # An out-of-order delivery describes a version you have already moved past.
@@ -133,10 +139,15 @@ ApplicationRecord.transaction do
   next if stored && stored >= version
 
   if payload["event"] == "subscriber.deleted"
-    subscriber&.destroy
+    # `destroy!`, not `destroy`: a `before_destroy` that throws `:abort`, or a
+    # `dependent: :restrict_with_error`, makes `destroy` return false without
+    # raising — which would write the tombstone and answer 2xx for a deletion
+    # that never happened, and then suppress every later delivery for that
+    # address. Raising rolls the tombstone back with it and we retry.
+    subscriber&.destroy!
     Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
   else
-    (subscriber || Subscriber.new(email: data["email"]))
+    (subscriber || Subscriber.new(email: email))
       .update!(status: data["status"], name: data["name"], source_updated_at: version)
   end
 end
