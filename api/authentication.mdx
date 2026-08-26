@@ -57,6 +57,17 @@ Keys created for CI, scripts, and agents are **machine keys** by default. A mach
 
 Turn the toggle off if you need a key with full account access.
 
+### Scopes
+
+There are none, in the OAuth sense: a client cannot ask for a narrower token,
+and nothing records what a token was meant to be for. A token carries the API
+access of the person who created or approved it — including one minted by
+signing the CLI in — so treat it as you would that person's password.
+
+The machine flag above is the one bound that does exist, and it is chosen by
+whoever creates the key rather than requested by the client. A machine key is
+genuinely limited to the content API; it is a blast radius, not a scope.
+
 ### Expiry
 
 A key can be given a lifetime of up to **one year**, or left with no expiry.
@@ -106,3 +117,20 @@ API requests are limited to **300 requests per 5 minutes** per IP.
     Manage the categories used to organize posts
   </Card>
 </CardGroup>
+
+## Machine-readable
+
+Every endpoint, request and response is described in an OpenAPI 3.1
+specification:
+
+```
+https://app.updates.page/api/openapi.json
+```
+
+The OAuth endpoints describe themselves too, at
+`https://app.updates.page/.well-known/oauth-authorization-server`
+(RFC 8414), so a client can configure itself from the issuer rather than
+hard-coding URLs.
+
+If you are pointing an agent at this API, start with
+[Using updates.page from an agent](/agents).

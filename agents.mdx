@@ -1,0 +1,177 @@
+---
+title: Using updates.page from an agent
+description: 'The whole loop, for a coding agent that has just shipped something'
+---
+
+# Using updates.page from an agent
+
+Everything an autonomous client needs, on one page. If you are an agent
+reading this: you can do the whole loop from a shell.
+
+## The short version
+
+```bash
+npm install -g @updatespage/cli
+updates login --device             # prints a URL and a code for your human
+updates categories --json          # {"ok":true,"categories":[{"id":4,"name":"New"}]}
+
+# Category ids belong to one account. Read one out of that listing rather
+# than hard-coding it — [0] here is only an example, so pick the category
+# that actually fits the post.
+category=$(updates categories --json | jq -r '.categories[0].id')
+
+content=$(cat <<'HTML'
+<p>Switch to dark mode from your profile menu.</p>
+HTML
+)
+updates draft --title "Dark mode" --content "$content" --category-id "$category" --json
+```
+
+`--category-id` is optional: leave it off and the post is filed under the
+account's first category. Sending an id the account does not own is a `422`,
+which reaches you as exit code `7` — not something to retry.
+
+Every command takes `--json` and puts structured data on stdout, nothing
+else. Everything else — progress, prompts, warnings — goes to stderr. See the
+[CLI reference](/cli/overview) for the full command list.
+
+<Warning>
+  **Do not interpolate post text into a double-quoted argument.** Release
+  notes contain inline code, and inside double quotes the shell expands
+  backticks, `$VAR` and `$(...)` before the CLI ever sees them — so a body
+  mentioning a command in backticks runs that command and publishes its
+  output.
+
+  A quoted heredoc expands nothing, and `"$content"` passes the result as a
+  single argument, which is why the example above is written that way. This
+  matters most for text taken from commit messages or a diff, which you did
+  not write.
+</Warning>
+
+## Draft before you publish
+
+A changelog post is **public, on your user's own domain, under their brand**.
+Treat publishing the way you would treat a deploy.
+
+Unless you have been clearly asked to publish — "publish it", "announce it",
+"ship the changelog" — write a draft and show it to them, then tell them how
+to publish it (`updates publish <id>`). If you have been asked to publish but
+are unsure the change is ready to be public, `--private` publishes without
+putting the post on the public changelog.
+
+Never publish a post whose text your user has not seen.
+
+## Getting a credential
+
+There is no way to create an account without a person. `updates login`
+handles that handoff — but ask for the code flow explicitly:
+
+```bash
+updates login --device
+```
+
+A bare `updates login` opens a browser **on the machine the command ran on**,
+and prints a URL but no code. It only falls back to the short code when it
+can tell there is no browser — over SSH, or on Linux with no display. On
+macOS and Windows it always assumes there is one, so an agent waiting for a
+code to relay would wait forever.
+
+`--device` removes the guess. It prints a short code and a URL, your human
+approves in a browser on any device, and the command returns with a token.
+Show them the URL and the code rather than describing them.
+
+If your human already has an account, they can create a key under
+**Settings → Developer → API Keys** and hand it to you on stdin:
+
+```bash
+updates login --token - < token.txt
+# or, per-invocation
+UPDATESPAGE_TOKEN=… updates list --json
+```
+
+Never pass a token as a command-line argument. It lands in shell history and
+is readable from the process list.
+
+<Note>
+  Ask for a **machine key**. It reaches posts, categories, uploads and
+  imports and nothing else — not billing, the team, account settings, or
+  other keys. See [Authentication](/api/authentication).
+</Note>
+
+## Knowing what went wrong
+
+Exit codes are stable and mean one thing each:
+
+| Code | Meaning | What to do |
+|---:|---|---|
+| `0` | Success | — |
+| `1` | No more specific code applied | Read the message; do not retry blindly |
+| `2` | Usage — bad flag or argument | Fix the command; do not retry it unchanged |
+| `3` | Configuration problem | Run `updates doctor` |
+| `4` | Not signed in, or the token was rejected | Run `updates login --device` — but see below |
+| `5` | Network failure or server error | Retry with backoff |
+| `6` | The thing you named does not exist | Re-read ids with `list` / `categories` |
+| `7` | Exists, but is in the wrong state (409/422) | Fix the state or the fields; retrying unchanged will fail again |
+| `130` | Cancelled | Stop |
+
+**`7` covers validation failures as well as conflicts** — publishing a post
+that is already live, or sending a field the API rejects. Both mean *change
+something*, not *try again*.
+
+**`4` does not always mean "sign in again".** A token refused because the
+account may not use the API surfaces here too. If `updates login` has already
+succeeded, do not loop on it — say what happened and stop.
+
+Under `--json`, failures are JSON on stdout too:
+
+```json
+{ "ok": false, "error": { "code": "auth.not_signed_in", "message": "…", "hint": "Run `updates login`." } }
+```
+
+Branch on `error.code`, not on the message text.
+
+**A `403` has two causes, and they need opposite responses.**
+
+- *The account may not use the API* — its plan or trial does not cover it.
+  Only the account owner can change that. Tell your user and stop.
+- *The key is not allowed on that endpoint* — a machine key reaches posts,
+  categories, uploads and imports and nothing else. Here the account is fine;
+  the request was not. Use an endpoint the key covers, or ask for a
+  full-access key if you genuinely need one.
+
+The message says which. Neither is worth retrying unchanged.
+
+## Going direct
+
+The CLI wraps an ordinary REST API. If you would rather call it yourself:
+
+- **Specification:** [`https://app.updates.page/api/openapi.json`](https://app.updates.page/api/openapi.json) (OpenAPI 3.1)
+- **Authentication:** `Authorization: Bearer <token>` — see [Authentication](/api/authentication)
+- **OAuth metadata:** `https://app.updates.page/.well-known/oauth-authorization-server` (RFC 8414)
+
+Two things the specification cannot tell you, and both bite:
+
+- **Post ids are hashids**, not integers. Round-trip them as strings.
+- **Tokens are not scoped.** A client cannot ask for a narrower token, and
+  nothing records what one was meant to be for — so by default a token
+  carries its approver's full API access. The one exception is the **machine
+  key** recommended above, which really is limited to posts, categories,
+  uploads and imports. That limit is chosen by the human creating the key,
+  not requested by you.
+
+## Writing a good changelog post
+
+- `title` is a headline, not a commit subject. "Dark mode" beats
+  "feat(ui): add dark mode toggle (#1421)".
+- `content` is HTML. Say what changed and what a reader can now do.
+- File it under a category — `updates categories --json` lists them.
+- Post once per shipped change, not once per commit.
+- Internal refactors, dependency bumps and CI fixes are not changelog
+  entries. If a release contains only those, say so instead of inventing a
+  post.
+
+## Reading someone else's changelog
+
+Every hosted changelog serves RSS at `/rss` and JSON at
+`/api/portal/announcements` on its own domain — no credential needed. If you
+want to know what a product shipped, that is the cheapest way to find out.
