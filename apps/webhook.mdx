@@ -111,6 +111,10 @@ email   = data["email"].strip.downcase
 # address by hashing it. The HMAC key lives outside the table (ideally outside
 # this database), which is what makes a tombstone a token rather than a
 # pseudonym for the address you were asked to erase.
+#
+# The key is what finds an existing tombstone, so rotating it orphans every
+# tombstone written under the old one — and they can't be re-keyed, because the
+# address they were derived from is gone. See the note below before rotating.
 digest  = OpenSSL::HMAC.hexdigest("SHA256", ENV.fetch("TOMBSTONE_KEY"), email)
 
 # Everything below happens under one lock per address, taken by every path and
@@ -167,6 +171,8 @@ head :ok
   `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload — useful in logs, but two deliveries can share a `sent_at` where they can't share an `updated_at`.
 
   Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
+
+  **That pruning window is also the rotation window for `TOMBSTONE_KEY`.** The key is what finds a tombstone, so rotating it makes every existing one unfindable, and there is nothing to migrate: the address the digest came from was deleted, which is the point. A delayed signup that a tombstone was holding back would then land, recreating someone you erased. So either keep the key stable until every tombstone written under it has been pruned, or — if you must rotate sooner — write new tombstones with the new key and look up under both until the old ones have aged out.
 
   An advisory lock is one way to serialise deliveries for an address, not the only one. What matters is the guarantee: nothing may read the stored version, decide it is newer, and be overtaken before it writes — and the subscriber row and its tombstone both have to be covered by it, or a delete and an older update will still slip past each other.
 
