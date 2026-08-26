@@ -107,32 +107,52 @@ tombstone = Tombstone.find_by(email_digest: digest)
 return head :ok if tombstone && tombstone.version >= version
 
 if payload["event"] == "subscriber.deleted"
-  existing = Subscriber.find_by(email: data["email"])
-  # A deletion is versioned at the moment it happened, so it can legitimately
-  # reach you *older* than a signup that came after it. Check it against the
-  # row like any other event, or a late delete wipes a live subscriber.
-  return head :ok if existing&.source_updated_at && existing.source_updated_at >= version
+  Subscriber.transaction do
+    existing = Subscriber.lock.find_by(email: data["email"])
+    # A deletion is versioned at the moment it happened, so it can legitimately
+    # reach you *older* than a signup that came after it. Check it against the
+    # row like any other event, or a late delete wipes a live subscriber.
+    stored = existing&.source_updated_at
+    unless stored && stored >= version
+      existing&.destroy
+      Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
+    end
+  end
 
-  existing&.destroy
-  Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
   return head :ok
 end
 
-subscriber = Subscriber.find_or_initialize_by(email: data["email"])
-stored     = subscriber.source_updated_at
+Subscriber.transaction do
+  # Settles the race between two deliveries for an address neither has seen:
+  # the unique index picks a winner and the loser reads the row back.
+  subscriber = Subscriber.create_or_find_by!(email: data["email"]) do |row|
+    row.status = data["status"]
+    row.name = data["name"]
+    row.source_updated_at = version
+  end
 
-# An out-of-order delivery describes a version you have already moved past.
-# `stored` is nil for a new row *and* for a contact that was already in your
-# database before you connected this — both take the version they're given.
-return head :ok if stored && stored >= version
+  # The lock is what makes comparing and writing a single step. Two deliveries
+  # for one subscriber really can be in flight at once — without it both read
+  # the same version, both decide they're newer, and whichever commits last
+  # wins regardless of which one is.
+  subscriber.lock!
+  stored = subscriber.source_updated_at
 
-subscriber.update!(status: data["status"], name: data["name"], source_updated_at: version)
+  # An out-of-order delivery describes a version you have already moved past.
+  # `stored` is nil for a contact that was already in your database before you
+  # connected this — it takes the version it's given.
+  next if stored && stored >= version
+
+  subscriber.update!(status: data["status"], name: data["name"], source_updated_at: version)
+end
 ```
 
 <Note>
   `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload — useful in logs, but two deliveries can share a `sent_at` where they can't share an `updated_at`.
 
   Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
+
+  A row lock is one way to make the compare and the write atomic, not the only one — a conditional `UPDATE ... WHERE source_updated_at < $version` does the same job in a single statement. What matters is that nothing can read the stored version, decide it's older, and be overtaken before it writes. Whatever you pick, apply it to the tombstone table too.
 </Note>
 
 ## Verifying the signature
