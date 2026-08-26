@@ -148,7 +148,15 @@ ApplicationRecord.transaction do
   # they're given. A deletion is checked here too: it's versioned at the moment
   # it happened, so it can legitimately arrive older than a signup that
   # followed it, and a late delete must not wipe a live subscriber.
-  next if stored && stored >= version
+  #
+  # An exact tie is the interesting case. Equal versions are almost always a
+  # redelivery of a state you hold, so skipping is right — but `updated_at` is
+  # a timestamp, not a sequence, so two *different* states can in principle
+  # share one, and nothing in the payload can order them. Removals get the tie:
+  # keeping someone subscribed by mistake is the error that reaches them, and
+  # dropping them is repaired by their next signup or by an export.
+  removal = payload["event"] == "subscriber.deleted" || data["status"] != "subscribed"
+  next if stored && (removal ? stored > version : stored >= version)
 
   if payload["event"] == "subscriber.deleted"
     # `destroy!`, not `destroy`: a `before_destroy` that throws `:abort`, or a
@@ -168,7 +176,9 @@ head :ok
 ```
 
 <Note>
-  `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload — useful in logs, but two deliveries can share a `sent_at` where they can't share an `updated_at`.
+  `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload, which two deliveries can easily share — it's for your logs, not for ordering.
+
+  **`updated_at` is not a sequence number, though, and the handler above deliberately treats a tie as "already applied".** It's a microsecond timestamp stamped by whichever of our processes wrote the row, so an exact collision is unlikely but not impossible. For a redelivery of the same state, skipping is exactly right. For two *different* states sharing a version, nothing in the payload can order them — so if you want a rule, prefer the one that leaves the person **off** your list: an unsubscribe or delete beats a signup on an exact tie. Wrongly keeping someone subscribed is the error that reaches them; wrongly dropping them is repaired by their next signup, or by Export.
 
   Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
 
@@ -271,6 +281,12 @@ Open the **⋯** menu next to Webhook and choose **Reconnect**. The URL you stor
 <Note>
   **Reconnecting issues a new signing secret and retires the old one.** That's also how you rotate: there's no separate rotate button, and the secret can't be looked up after the one time we show it.
 </Note>
+
+<Warning>
+  **Put your endpoint back into ping-only mode before you click Reconnect.** The reconnect is proved the same way the first connect is — with a signed `ping` — and that ping is signed with the **new** secret, which you don't have yet because we only show it once the reconnect succeeds. An endpoint strictly verifying with the old secret rejects it, we store nothing, and the rotation can't complete.
+
+  So the order is: accept `ping` without verifying (5xx everything else, as when you first connected) → Reconnect → copy the new secret → install it → resume verifying. It's the same bootstrap window as a first connect, and worth keeping just as short.
+</Warning>
 
 ## Troubleshooting
 
