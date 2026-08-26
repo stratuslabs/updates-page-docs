@@ -93,7 +93,7 @@ And these headers:
   On an exact tie, skip anything describing the state you already hold — that's a redelivery — and otherwise let a **removal** win: an unsubscribe or delete beats a signup sharing its version. `updated_at` is a timestamp rather than a sequence, so a collision is unlikely but not impossible, and keeping someone subscribed by mistake is the error that reaches a real person.
 </Warning>
 
-Roughly:
+Roughly. `Subscriber` here is **your own table for the people we send you** — a mirror of your updates.page list, not a shared contacts table your CRM also writes to. That matters at the deletion branch; there's a note below on adapting it if the two are the same table.
 
 ```ruby
 # The connect ping carries no record — and it is the first delivery you'll
@@ -145,8 +145,9 @@ ApplicationRecord.transaction do
   stored     = subscriber&.source_updated_at
 
   # An out-of-order delivery describes a version you have already moved past.
-  # `stored` is nil for an address you've never seen *and* for a contact that
-  # was in your database before you connected this — both take the version
+  # `stored` is nil for an address you've never seen *and* for a row that
+  # predates this integration — most often one you imported from the Export
+  # CSV before connecting, which carries no version. Both take the version
   # they're given. A deletion is checked here too: it's versioned at the moment
   # it happened, so it can legitimately arrive older than a signup that
   # followed it, and a late delete must not wipe a live subscriber.
@@ -180,8 +181,14 @@ ApplicationRecord.transaction do
     subscriber&.destroy!
     Tombstone.upsert({ email_digest: digest, version: version }, unique_by: :email_digest)
   else
-    (subscriber || Subscriber.new(email: email))
-      .update!(status: data["status"], name: data["name"], source_updated_at: version)
+    # `name` is only assigned when the payload carries one. The portal's form
+    # asks for an address and nothing else, so most payloads have `nil` here —
+    # and passing that through would wipe a name you already had, on every
+    # ordinary status change.
+    attrs = { status: data["status"], source_updated_at: version }
+    attrs[:name] = data["name"] if data["name"].present?
+
+    (subscriber || Subscriber.new(email: email)).update!(**attrs)
   end
 end
 
@@ -192,6 +199,10 @@ head :ok
   `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload, which two deliveries can easily share — it's for your logs, not for ordering.
 
   **`updated_at` is not a sequence number, though, and the handler above deliberately treats a tie as "already applied".** It's a microsecond timestamp stamped by whichever of our processes wrote the row, so an exact collision is unlikely but not impossible. For a redelivery of the same state, skipping is exactly right. For two *different* states sharing a version, nothing in the payload can order them — so if you want a rule, prefer the one that leaves the person **off** your list: an unsubscribe or delete beats a signup on an exact tie. Wrongly keeping someone subscribed is the error that reaches them; wrongly dropping them is repaired by their next signup, or by Export.
+
+  **If that table *is* your contacts table, don't `destroy!`.** The example owns its rows, so deleting one is safe. A contact in a CRM usually isn't ours to delete — it may predate this integration and belong to other lists, workflows or invoices — and `subscriber.deleted` cannot tell you which. Remove the updates.page membership instead (a join row, a list flag, a tag) and leave the person alone. The version and tombstone bookkeeping is unchanged; only the destructive line moves.
+
+  That does mean the address stays in your system, which is the opposite of what a deletion is asking for. It's the honest answer: we're telling you someone asked us to erase them *here*, and whether that obliges you to erase them *there* depends on why you hold them, which only you know.
 
   Tombstones only ever block deliveries older than themselves, so they're safe to prune once they're older than any delivery could still be in flight — a day is generous.
 
