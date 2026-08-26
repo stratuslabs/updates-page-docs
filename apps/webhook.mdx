@@ -240,14 +240,21 @@ The version check in the handler above covers the ordinary case for free: a repe
 |----------|--------------|
 | **2xx** | Delivered |
 | **3xx** | Refused, not followed. Give us the final URL — only the first address is security-checked, so following a redirect would be a way around that |
-| **404**, other 4xx, on a signup or update | Recorded and shown on the Subscriptions page. The app keeps working, so a deploy that briefly takes the route away doesn't cost you the integration — and the next event for that address syncs them anyway |
+| **404** on a signup or update | Recorded and shown on the Subscriptions page. The app keeps working, so a deploy that briefly takes the route away doesn't cost you the integration — and the next event for that address syncs them anyway |
 | **404** on an unsubscribe or delete | Retried, then retried again over the following hours. Nothing replays a removal for you: the record is gone at our end, so if this delivery is lost the address just stays in your system |
+| Any **other 4xx** — `400`, `405`, `409`, `422` — on any event | Recorded and shown on the Subscriptions page, and **this delivery is dropped**: we read it as your endpoint understanding the request and refusing it, which trying again wouldn't change. The app keeps working. See the warning below before answering a removal this way |
 | **401**, **403** | We stop and ask you to reconnect — this looks like your endpoint rejecting our signature |
 | **410 Gone** | We stop. You've told us the endpoint is permanently gone |
 | **429** | Retried with backoff |
 | **5xx**, timeout, connection error | Retried with backoff, then recorded |
 
 Subscribers are always saved to your account first, so nothing is lost while an endpoint is down.
+
+<Warning>
+  **Don't answer an unsubscribe or delete with a 4xx you mean as "try again later".** `404` is the one exception — we treat it as a route that hasn't deployed yet and retry. Every other 4xx drops the delivery, and a removal is the one event we cannot replay for you: the record is already gone at our end, so its address exists only in that delivery. The address then stays in your system with nothing left to take it out.
+
+  If you need us to come back, answer **5xx** (or `429`). Both retry with backoff, and a removal keeps getting further attempts over the following hours after the ordinary ladder runs out.
+</Warning>
 
 ## Changing the URL or the secret
 
