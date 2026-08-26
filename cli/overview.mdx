@@ -122,12 +122,23 @@ Failures exit with a code that says what went wrong:
 | Code | Meaning |
 |-----:|---------|
 | `0` | Success |
+| `1` | Anything without a more specific code |
 | `2` | Usage — unknown flag, missing argument, bad value |
 | `3` | Configuration problem |
 | `4` | Not signed in, or the token was rejected |
 | `5` | Network failure or server error |
 | `6` | The thing you named does not exist |
+| `7` | It exists, but is in the wrong state for this operation |
 | `130` | Cancelled (Ctrl-C) |
+
+`7` is the one worth handling deliberately: it covers validation failures
+(`422`) as well as genuine conflicts (`409`), so it is what you get from
+publishing a post that is already live *and* from sending a field the API
+rejects. Either way something has to change before the command is worth
+running again.
+
+Driving the CLI from an agent? [Using updates.page from an agent](/agents)
+has the same table with what to do about each.
 
 ## Troubleshooting
 
