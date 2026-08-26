@@ -88,6 +88,8 @@ Open the **⋯** menu next to Kit and choose **Configure** to pick a different t
     If you want them gone entirely, remove them in Kit.
   </Accordion>
   <Accordion title="Subscribers from before I connected aren't in Kit">
-    Syncing starts when you connect, and nothing is sent retroactively — not the people who signed up before you first connected, and not anyone added while the app was failing. Export them from the Subscribers page and import them into Kit.
+    Syncing starts when you connect, and nothing is sent retroactively — not the people who signed up before you first connected, and not anyone added while the app was showing an error. Export them from the Subscribers page and import them into Kit.
+
+    A brief failure is not the same thing: if Kit was slow or briefly unavailable we retry for a few minutes and those subscribers arrive on their own, so give it that long before exporting. A dead API key doesn't retry at all — see the reconnect case above.
   </Accordion>
 </AccordionGroup>
