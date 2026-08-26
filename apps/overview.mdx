@@ -35,16 +35,18 @@ Apps connect your changelog to other tools. Today they do one job: when someone 
     Go to **Settings → Portal → Subscriptions** and find the app under **Apps**
   </Step>
   <Step title="Connect">
-    Click **Connect** and paste the API key from that tool. We check the key with the provider before saving it, so you find out immediately if it's wrong.
+    **An email app** asks for the API key from that tool. We check the key with the provider before saving it, so you find out immediately if it's wrong.
+
+    **[Webhook](/apps/webhook)** asks for an `https://` endpoint instead. We prove it the same way — by sending it a signed `ping`, which has to come back 2xx before we store anything — and then show you a signing secret once. Your endpoint has to accept that first request even though you don't have the secret yet.
   </Step>
   <Step title="Choose where subscribers go">
-    For an email app, pick the list, tag, or segment new subscribers should be added to. Webhook has no list — connecting it is the whole setup.
+    **An email app** asks which list, tag, or segment new subscribers are added to.
+
+    **Webhook** has no list — the connect step above is the whole setup, and what happens to each event is your code's decision.
   </Step>
 </Steps>
 
 That's it. New subscribers reach the connected tool within seconds of signing up.
-
-The **Webhook** app works a little differently: instead of an API key you give us a URL, and instead of picking a list we POST the whole event to you.
 
 → [Connecting Kit](/apps/kit) · [Setting up a webhook](/apps/webhook)
 
@@ -58,9 +60,15 @@ That's also why **choosing a list or tag isn't optional** for those apps. It's w
 
 **[Webhook](/apps/webhook) has no list to choose, so none of that applies to it.** We POST the subscriber to your endpoint on every change, opt-outs and deletions included, and what happens next is your code's decision. It starts syncing the moment it's connected.
 
-Syncing is one-way and it starts when you connect. Contacts you add directly in your email tool don't appear on your Subscribers page, and **nothing is sent retroactively** — not the people who subscribed before you connected the app, and not anyone who signed up while a connection was broken. Reconnecting resumes syncing from that moment; it doesn't go back and catch up.
+Syncing is one-way and it starts when you connect. Contacts you add directly in your email tool don't appear on your Subscribers page, and **nothing is sent retroactively** — not the people who subscribed before you connected the app, and not anyone who signed up while the app was disconnected or stopped. Reconnecting resumes syncing from that moment; it doesn't go back and catch up.
 
-Export is how you close that gap: the Subscribers page gives you the whole list as a CSV, to import into your email tool.
+A *briefly* failing endpoint is different, and only Webhook can tell you which you had. A timeout or 5xx is retried for about six minutes, and a `429` for over an hour, so deliveries made during a blip that short arrive on their own once you recover — nothing is missing and there is nothing to close. Beyond that the attempts run out and those deliveries are dropped, which is when the gap above applies.
+
+Export is how you close it: the Subscribers page gives you the whole list as a CSV, to import into your email tool.
+
+<Warning>
+  If your endpoint has only just recovered, give the retries a few minutes before exporting. Deliveries still on the ladder will arrive, and a CSV import carries no delivery id for your handler to recognise them by — so exporting too early is how one subscriber gets processed twice.
+</Warning>
 
 ## When something goes wrong
 
