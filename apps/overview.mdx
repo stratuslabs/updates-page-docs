@@ -5,7 +5,7 @@ description: 'Connect updates.page to the tools you already use'
 
 # Apps
 
-Apps connect your changelog to other tools. Today they do one job: when someone subscribes on your portal, we add them to your email tool automatically.
+Apps connect your changelog to other tools. Today they do one job: when someone subscribes on your portal, we hand them straight to a tool of yours — your email provider, or an endpoint you run.
 
 <Note>
   Apps are available on the **Pro** plan and above. [Collecting subscribers](/portal/subscriptions) works on every plan.
@@ -38,7 +38,7 @@ Apps connect your changelog to other tools. Today they do one job: when someone 
     Click **Connect** and paste the API key from that tool. We check the key with the provider before saving it, so you find out immediately if it's wrong.
   </Step>
   <Step title="Choose where subscribers go">
-    Pick the list, tag, or segment new subscribers should be added to.
+    For an email app, pick the list, tag, or segment new subscribers should be added to. Webhook has no list — connecting it is the whole setup.
   </Step>
 </Steps>
 
@@ -58,7 +58,9 @@ That's also why **choosing a list or tag isn't optional** for those apps. It's w
 
 **[Webhook](/apps/webhook) has no list to choose, so none of that applies to it.** We POST the subscriber to your endpoint on every change, opt-outs and deletions included, and what happens next is your code's decision. It starts syncing the moment it's connected.
 
-Syncing is one-way. Contacts you add directly in your email tool don't appear on your Subscribers page, and people who subscribed **before** you connected the app aren't sent retroactively — reconnecting the app backfills anyone added since it last synced.
+Syncing is one-way and it starts when you connect. Contacts you add directly in your email tool don't appear on your Subscribers page, and **nothing is sent retroactively** — not the people who subscribed before you connected the app, and not anyone who signed up while a connection was broken. Reconnecting resumes syncing from that moment; it doesn't go back and catch up.
+
+Export is how you close that gap: the Subscribers page gives you the whole list as a CSV, to import into your email tool.
 
 ## When something goes wrong
 
