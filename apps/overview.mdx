@@ -52,21 +52,27 @@ The **Webhook** app works a little differently: instead of an API key you give u
 
 We sync a subscriber when they sign up, and again if their status changes.
 
-When someone unsubscribes from your changelog, we undo what we did — we remove them from the list, tag, or segment we added them to. We don't unsubscribe them from your email tool altogether, because they may be on other lists of yours that have nothing to do with your changelog.
+**Email apps** put them in the list, tag or segment you picked. When someone unsubscribes from your changelog we undo what we did — we take them out of that list, and no further: we don't unsubscribe them from your email tool altogether, because they may be on other lists of yours that have nothing to do with your changelog.
 
-That's also why **choosing a list or tag isn't optional**: it's what lets us honour an opt-out later. An app that doesn't have one yet won't sync at all — it will say so on the Subscriptions page — rather than adding people we'd have no way to remove.
+That's also why **choosing a list or tag isn't optional** for those apps. It's what lets us honour an opt-out later, so an email app that doesn't have one yet won't sync at all — it will say so on the Subscriptions page — rather than adding people we'd have no way to remove.
+
+**[Webhook](/apps/webhook) has no list to choose, so none of that applies to it.** We POST the subscriber to your endpoint on every change, opt-outs and deletions included, and what happens next is your code's decision. It starts syncing the moment it's connected.
 
 Syncing is one-way. Contacts you add directly in your email tool don't appear on your Subscribers page, and people who subscribed **before** you connected the app aren't sent retroactively — reconnecting the app backfills anyone added since it last synced.
 
 ## When something goes wrong
 
-If your email tool rejects a sync — usually because the API key was revoked or regenerated — the app shows an error on the Subscriptions page with what went wrong, and stops trying. Reconnect with a fresh key to start it again.
+Whatever the app, the Subscriptions page shows what went wrong.
+
+For an **email app**, a rejected sync usually means the API key was revoked or regenerated: syncing stops and the card asks you to reconnect with a fresh key.
+
+For **[Webhook](/apps/webhook)**, most failures don't stop the app: we keep delivering, and the error stays on the card until a delivery succeeds. What does stop it is your endpoint refusing us outright — `401` or `403`, which reads as your signature check rejecting us, and `410 Gone`, which says the endpoint is permanently retired. [The full table is on the webhook page.](/apps/webhook#how-we-handle-your-responses)
 
 Your changelog is never affected by this. Subscribers are still saved to your account even when no app is connected or a connected app is failing, so you never lose sign-ups while you sort it out.
 
 ## Disconnecting
 
-Open the **⋯** menu next to a connected app and choose **Disconnect**. This deletes the stored credential; it doesn't remove anyone from your list in the other tool.
+Open the **⋯** menu next to a connected app and choose **Disconnect**. This deletes the stored credential. It doesn't remove anyone from the list in your email tool, and it doesn't tell a webhook endpoint anything — we simply stop sending.
 
 ## Good to know
 
