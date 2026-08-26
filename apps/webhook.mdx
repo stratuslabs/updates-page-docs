@@ -46,13 +46,14 @@ Every delivery is a `POST` with a JSON body:
 {
   "id": "0f1c4a9e-3c1e-4f6a-9c4a-2f0c8b6d1a77",
   "event": "subscriber.created",
-  "sent_at": "2026-08-25T10:14:03Z",
+  "sent_at": "2026-08-25T10:14:03.481Z",
   "data": {
     "id": "wJ8kQz",
     "email": "reader@example.com",
     "name": "Sam Reader",
     "status": "subscribed",
     "source": "portal",
+    "updated_at": "2026-08-25T10:14:03.477412Z",
     "subscribed_at": "2026-08-25T10:14:03Z",
     "unsubscribed_at": null,
     "created_at": "2026-08-25T10:14:03Z"
@@ -65,7 +66,7 @@ And these headers:
 | Header | Value |
 |--------|-------|
 | `X-UpdatesPage-Event` | The event name, also in the body |
-| `X-UpdatesPage-Delivery` | A unique id for this delivery — the same value as `id` in the body |
+| `X-UpdatesPage-Delivery` | The id of this delivery — the same value as `id` in the body. **Stable across our retries**, so it's what you dedupe on |
 | `X-UpdatesPage-Timestamp` | Unix seconds, part of what's signed |
 | `X-UpdatesPage-Signature` | `sha256=` followed by the HMAC — see below |
 
@@ -76,11 +77,31 @@ And these headers:
 | `ping` | You connect the app. `data` carries a message, nothing else |
 | `subscriber.created` | Someone subscribes from your changelog |
 | `subscriber.updated` | Their status changes — an unsubscribe, or a re-subscribe |
-| `subscriber.deleted` | You delete them on the Subscribers page. `data` carries the email and `"status": "deleted"` — there's no record left to send |
+| `subscriber.deleted` | You delete them on the Subscribers page. `data` carries the email, `"status": "deleted"` and an `updated_at` of the send time — there's no record left to read |
 
 <Warning>
-  **Act on `data.status`, not on the event name.** Deliveries aren't ordered, so someone who subscribes and immediately unsubscribes can reach you either way round. Every payload carries the subscriber as they read at the moment we sent it, so applying `data.status` always converges on the truth — trusting the event name can resurrect someone who has already left.
+  **Act on `data.status`, not on the event name — and only if `data.updated_at` is newer than what you've stored.**
+
+  Deliveries aren't ordered. Someone who subscribes and immediately unsubscribes can reach you either way round, so the event name doesn't tell you what's true now: a `subscriber.created` can arrive *after* the unsubscribe that followed it.
+
+  `data.status` is what actually happened, but it's a snapshot taken when we built the payload, not when you receive it — so applying it blindly has the same problem one step down. `data.updated_at` is the version of the record that snapshot describes. Store it next to the subscriber and ignore any payload whose `updated_at` isn't newer than the one you already have, and late deliveries become harmless instead of destructive.
 </Warning>
+
+Roughly:
+
+```ruby
+incoming = payload["data"]
+existing = Subscriber.find_by(email: incoming["email"])
+
+# An out-of-order delivery describes a version you already moved past.
+return head :ok if existing && existing.source_updated_at >= Time.parse(incoming["updated_at"])
+
+existing&.update!(status: incoming["status"], source_updated_at: incoming["updated_at"])
+```
+
+<Note>
+  `updated_at` is the record's own version and moves only when the record does, so a redelivery of the same state is a no-op rather than a write. `sent_at` is when we built the payload — useful in logs, but two deliveries can share a `sent_at` where they can't share an `updated_at`.
+</Note>
 
 ## Verifying the signature
 
@@ -168,7 +189,7 @@ Open the **⋯** menu next to Webhook and choose **Reconnect**. The URL you stor
     Almost always the body. Sign the raw bytes as received, not a re-serialized copy of the parsed JSON — key order and whitespace both change the result. Check too that the timestamp header is part of what you sign, joined to the body with a dot.
   </Accordion>
   <Accordion title="I got the same event twice">
-    Retries can redeliver an event we already sent. `X-UpdatesPage-Delivery` is unique per delivery, so store it and ignore ids you've already handled — and applying `data.status` makes a repeat harmless anyway.
+    A retry carries the **same** `X-UpdatesPage-Delivery` as the attempt it repeats — deliberately, so you can recognise it. Store the ids you've handled and ignore repeats. The `updated_at` check above catches them too, since a redelivery describes a version you've already applied.
   </Accordion>
   <Accordion title="Subscribers from before I connected weren't sent">
     Syncing starts when you connect. Export the earlier ones from the Subscribers page.
