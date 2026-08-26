@@ -90,13 +90,23 @@ And these headers:
 Roughly:
 
 ```ruby
-incoming = payload["data"]
-existing = Subscriber.find_by(email: incoming["email"])
+# The connect ping carries no record — and it is the first delivery you'll
+# ever get, so handle it before anything reaches for `data`.
+return head :ok if payload["event"] == "ping"
 
-# An out-of-order delivery describes a version you already moved past.
-return head :ok if existing && existing.source_updated_at >= Time.parse(incoming["updated_at"])
+data    = payload["data"]
+version = Time.parse(data["updated_at"])
 
-existing&.update!(status: incoming["status"], source_updated_at: incoming["updated_at"])
+# A deletion has no record left to version against — act on it and stop.
+return destroy_subscriber(data["email"]) if payload["event"] == "subscriber.deleted"
+
+subscriber = Subscriber.find_or_initialize_by(email: data["email"])
+
+# An out-of-order delivery describes a version you have already moved past.
+# Only an existing row has one; a new address is always news.
+return head :ok if subscriber.persisted? && subscriber.source_updated_at >= version
+
+subscriber.update!(status: data["status"], name: data["name"], source_updated_at: version)
 ```
 
 <Note>
@@ -140,8 +150,15 @@ function verify(headers, rawBody, secret) {
     "sha256=" +
     crypto.createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest("hex")
 
-  if (signature.length !== expected.length) return false
-  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return false
+  // Compare the buffers' byte lengths, not the strings'. A header with a
+  // non-ASCII character can match on string length and still produce a
+  // different number of UTF-8 bytes, and timingSafeEqual *throws* on a length
+  // mismatch rather than returning false.
+  const received = Buffer.from(signature, "utf8")
+  const computed = Buffer.from(expected, "utf8")
+
+  if (received.length !== computed.length) return false
+  if (!crypto.timingSafeEqual(received, computed)) return false
 
   return Math.abs(Date.now() / 1000 - Number(timestamp)) < 300
 }
